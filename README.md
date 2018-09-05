@@ -12,7 +12,7 @@ npm install service-store  react-redux immer lodash redux @types/react-redux @ty
 ```
 ### Usage
 
-1. create a model class
+# 1 create a model class
 
 ```
 class Cart {
@@ -51,7 +51,7 @@ class Cart {
     }
 }
 ```
-2. create the root service
+# 2 create the root service
 ```
 const service = new ServiceStore({
     cart: new Cart
@@ -59,7 +59,7 @@ const service = new ServiceStore({
 const { Provider, connect, dispatch } = service
 export { Provider, connect, dispatch }
 ```
-3. use Provider in the index.js
+# 3 use Provider in the index.js
 ```
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -75,7 +75,7 @@ ReactDOM.render(
 );
 registerServiceWorker();
 ```
-4. use connect and dispatch in the component
+# 4 use connect and dispatch in the component
 ```
 import React, { Component } from 'react';
 import './App.css';
