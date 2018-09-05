@@ -1,5 +1,5 @@
 # ServiceStore
-Writing Redux can be tedious. Instead of writing the similar boilerplate code again and again, with ServiceStore you can just write model classes, which will be converted to redux store, actions & reducers.
+Writing Redux can be tedious. Instead of writing the similar boilerplate code again and again, with ServiceStore you can write model classes, which will be automatically converted to redux store, actions & reducers.
 
 ![](https://shenawesome.github.io/img/ServiceStore.jpg)
 
