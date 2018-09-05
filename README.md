@@ -1,5 +1,5 @@
 # ServiceStore
-A tool lib that convert class to redux store, actions & reducers.
+ServiceStore allows you to write model classes, which will be converted to redux store, actions & reducers.
 
 ![](https://shenawesome.github.io/img/ServiceStore.jpg)
 
@@ -115,9 +115,9 @@ export default App;
 ### Features
 
 - Provide much better intellisense than vanilla redux (tested with VS code)
- - Support typescript & JavaScript react app (tested with create react app. decorator needs to enabled) 
- - Let you write redux components in OOP style, which is more intuitive in most cases.
- - Model classes are transferred to redux components and run as redux components. You don't lose any redux benefit/features and can call redux API directly if you like.  Redux dev tool and any other redux tools/libs can be used with no difference.
+- Support typescript & JavaScript react app (tested with create react app. decorator needs to enabled) 
+- Let you write redux components in intuitive OOP style. You can focus on the business logic when implementing the ServiceStore (the root store contains all models)
+- Model classes are transferred to redux components and run as redux components. It is just a thin wrapper around redux which provides OOP style API. You don't lose any redux benefit/features and can call redux API directly when needed. Redux dev tool and any other redux tools/libs can be used without difference.
 
 
  
