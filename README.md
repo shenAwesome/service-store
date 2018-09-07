@@ -17,7 +17,7 @@ npm install service-store  react-redux immer lodash redux @types/react-redux @ty
 ```
 class Cart {
 
-    //---------------------- state -----------------------
+    //---------------------- state fields-----------------------
     /** cart's name */
     name = 'My nice cart'
     /** product list */
@@ -43,7 +43,7 @@ class Cart {
         this.add(prod)
     }
 
-    //--------------------- selectors ----------------------- 
+    //--------------------- calculated fields ----------------------- 
     /** total price */
     @calc
     total() {
