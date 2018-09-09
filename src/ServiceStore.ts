@@ -29,16 +29,19 @@ const middleware = (target: any, key: string) => {
 
 /*iterate object*/
 function each(obj: object, func: (val: any, key: string) => void) {
-  const skipFields = obj['_skipFields_'] || []
-  Object.keys(obj).filter(k => !k.startsWith('_') && skipFields.indexOf(k) == -1).forEach(key => {
+  const skipFields = obj['_skipFields_'] || [],
+    filter = (k: any) => !k.startsWith('_') && skipFields.indexOf(k) == -1 && k !== 'constructor'
+  Object.keys(obj).filter(filter).forEach(key => {
     return func(obj[key], key)
   })
 }
 /*iterate model methods*/
 function eachMethod(obj: object, func: (val: any, key: string) => void) {
   const p = Object.getPrototypeOf(obj),
-    keys = Object.getOwnPropertyNames(p)
-  keys.filter(k => k !== 'constructor' && !k.startsWith('_')).forEach(key => {
+    keys = Object.getOwnPropertyNames(p),
+    skipFields = obj['_skipFields_'] || [],
+    filter = (k: any) => !k.startsWith('_') && skipFields.indexOf(k) == -1 && k !== 'constructor'
+  keys.filter(filter).forEach(key => {
     return func(obj[key], key)
   })
 }
