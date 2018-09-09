@@ -95,7 +95,7 @@ class ServiceStore<T> {
         } else { //reducers 
           const actionType = `${modelName}/${methodName}`
           if (method.isEffect) effectTypes.push(actionType)
-          const reducer = (state: any, action: any) => {
+          const reducer = (state: any, action: Action) => {
             let ret = state
             if (action.type == actionType) {
               if (!method.isEffect) { //handle normal method, simple reduer
@@ -103,8 +103,8 @@ class ServiceStore<T> {
                   method.call(draftState, action.payload)
                 })
               } else if (action.payload != '_EffectFinish_') { //  starts an effect, dispatch as this, state as second arguments just in case 
-                const { effectId } = action,
-                  effectDispatch = {}  //make a special dispath to inject effectId to all actions happens in this effect.
+                const effectId = action.effectId || Date.now() + Math.random() + ''
+                const effectDispatch = {}  //make a special dispath to inject effectId to all actions happens in this effect.
                 each(model_dispatch, (fn, key) => {
                   effectDispatch[key] = (payload: any) => fn(payload, effectId)
                 })
@@ -119,9 +119,6 @@ class ServiceStore<T> {
 
           //a dispatcher ready for firing actions
           model_dispatch[methodName] = function (payload: any, effectId?: string) {
-            if (!effectId && method.isEffect) {//create effectId for effect
-              effectId = Date.now() + Math.random() + ''
-            }
             store.dispatch({ type: actionType, payload, effectId })
           }
           model_reducers.push(reducer)
