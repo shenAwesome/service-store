@@ -17,8 +17,8 @@ const effect = (target: any, key: string) => {
 /**
  * decorator to tag a method as calculated field
  */
-const calc = (target: any, key: string) => {
-  tag(target, key, 'isCalc')
+const computed = (target: any, key: string) => {
+  tag(target, key, 'isComputed')
 }
 /**
  * decorator to tag a method as middleware
@@ -30,7 +30,7 @@ const middleware = (target: any, key: string) => {
 /*iterate object*/
 function each(obj: object, func: (val: any, key: string) => void) {
   const skipFields = obj['_skipFields_'] || [],
-    filter = (k: any) => !k.startsWith('_') && skipFields.indexOf(k) == -1 && k !== 'constructor'
+    filter = (k: any) => !(k.startsWith('_') || includes(skipFields, k) || k == 'constructor')
   Object.keys(obj).filter(filter).forEach(key => {
     return func(obj[key], key)
   })
@@ -40,17 +40,21 @@ function eachMethod(obj: object, func: (val: any, key: string) => void) {
   const p = Object.getPrototypeOf(obj),
     keys = Object.getOwnPropertyNames(p),
     skipFields = obj['_skipFields_'] || [],
-    filter = (k: any) => !k.startsWith('_') && skipFields.indexOf(k) == -1 && k !== 'constructor'
+    filter = (k: any) => !(k.startsWith('_') || includes(skipFields, k) || k == 'constructor')
   keys.filter(filter).forEach(key => {
     return func(obj[key], key)
   })
+}
+
+function includes(array: any[], item: any) {
+  return array.indexOf(item) != -1
 }
 /**
  * yarn add react-redux immer lodash redux
  * yarn add @types/react-redux @types/lodash @types/redux --dev
  * convert class to redux state & action
  * @param cls
- * @param modelName
+ * @param modelId
  */
 class ServiceStore<T> {
   /**
@@ -58,9 +62,10 @@ class ServiceStore<T> {
    */
   public store: Store
   private dispatcher = {}
-  private calcFields = {}
+  private computedFields = {}
+  public pluginIds = [] as string[]
 
-  constructor(models: T, middleware = [] as any[]) {
+  constructor(public models: T, middleware = [] as any[]) {
     this.initStore(models, middleware)
   }
 
@@ -68,55 +73,55 @@ class ServiceStore<T> {
     const reducers = {},
       modelMiddleware: any[] = [],
       dispatcher = this.dispatcher,
-      effectTypes = [] as string[]
-    each(models as any, (model, modelName) => {  /* for each model, create state, reducers*/
+      effectTypes = [] as string[],
+      effects = {}
+    each(models as any, (model, modelId) => {  /* for each model, create state, reducers*/
       //create state from fields
       const model_state = {}
       each(model, (val, key) => model_state[key] = val)
 
-      const model_dispatch = dispatcher[modelName] = {},   //dispatch wrapper, so we can dispatch with method calling 
-        model_calcFields = this.calcFields[modelName] = {}, //calcuated fields 
+      const model_dispatch = dispatcher[modelId] = {},   //dispatch wrapper, so we can dispatch with method calling 
+        model_computedFields = this.computedFields[modelId] = {}, //calcuated fields 
         model_reducers = [] as Function[] //reducers
       //create reducer,middleware,effect,calcluated field from methods 
+      let isPlugin = false
       eachMethod(model, (method, methodName) => {
-        if (method.isCalc) { //calc fields
-          model_calcFields[methodName] = () => method.call(store.getState()[modelName])
+        if (method.isComputed) { //calc fields
+          //model_computedFields[methodName] = () => method.call(store.getState()[modelId])
+          model_computedFields[methodName] = method
         } else if (method.isMiddleware) {// middleware.  all get called on every dispatch 
+          isPlugin = true
           modelMiddleware.push((store: any) => (next: any) => (action: any) => {
             let ret = method.call(model_dispatch, { store, next, action }, {
               type: action.type,
-              isEffect: effectTypes.indexOf(action.type) != -1,
+              isEffect: includes(effectTypes, action.type),
               isEffectFinish: action.payload == '_EffectFinish_',
-              model: model
+              isModelAction: this.isPluginAction(action.type),
+              model: model,
+              serviceStore: this
             })
             if (ret == undefined) ret = next(action)
             return ret
           })
+        } else if (method.isEffect) {
+          const actionType = `${modelId}/${methodName}`
+          effectTypes.push(actionType)
+          effects[actionType] = { modelId, methodName, method }
+          //a dispatcher ready for firing actions
+          model_dispatch[methodName] = function (payload: any, effectId?: string) {
+            store.dispatch({ type: actionType, payload, effectId })
+          }
         } else { //reducers 
-          const actionType = `${modelName}/${methodName}`
-          if (method.isEffect) effectTypes.push(actionType)
+          const actionType = `${modelId}/${methodName}`
           const reducer = (state: any, action: Action) => {
             let ret = state
             if (action.type == actionType) {
-              if (!method.isEffect) { //handle normal method, simple reduer
-                ret = produce(state, draftState => {
-                  method.call(draftState, action.payload)
-                })
-              } else if (action.payload != '_EffectFinish_') { //  starts an effect, dispatch as this, state as second arguments just in case 
-                const effectId = action.effectId || Date.now() + Math.random() + ''
-                const effectDispatch = {}  //make a special dispath to inject effectId to all actions happens in this effect.
-                each(model_dispatch, (fn, key) => {
-                  effectDispatch[key] = (payload: any) => fn(payload, effectId)
-                })
-                ret = produce(state, draftState => {
-                  let prom = method.call(effectDispatch, action.payload, draftState)
-                  prom.then(() => model_dispatch[methodName]('_EffectFinish_', effectId))//dispatch a finish action
-                })
-              }
+              ret = produce(state, draftState => {
+                method.call(draftState, action.payload)
+              })
             }
             return ret
           }
-
           //a dispatcher ready for firing actions
           model_dispatch[methodName] = function (payload: any, effectId?: string) {
             store.dispatch({ type: actionType, payload, effectId })
@@ -124,15 +129,63 @@ class ServiceStore<T> {
           model_reducers.push(reducer)
         }
       })
-      reducers[modelName] = (state: any, action: any) => (
+      reducers[modelId] = (state: any, action: any) => (
         model_reducers.reduce((s, reducer) => reducer(s, action),
           (state == undefined) ? model_state : state)
       )
+      if (isPlugin) this.pluginIds.push(modelId)
     })
+
+    /**
+     * the middleware to handle effects
+     * @param store 
+     */
+    const effectHandler = (store: any) => (next: any) => (action: any) => {
+      const { type } = action,
+        FinishFlag = '_EffectFinish_'
+      if (includes(effectTypes, type)) {
+        const { modelId, methodName, method } = effects[type]
+        if (action.payload != FinishFlag) { //start
+          const effectId = action.effectId || Date.now() + Math.random() + '',
+            model_dispatch = dispatcher[modelId], //todo , patch this 
+            effectDispatch = {}  //make a special dispath to inject effectId to all actions happens in this effect.
+          each(model_dispatch, (fn, key) => {
+            effectDispatch[key] = (payload: any) => fn(payload, effectId)
+          })
+          const modelState = store.getState()[modelId],
+            mixedContext = { ...modelState, ...effectDispatch },
+            prom = method.call(mixedContext, action.payload, store.getState())
+          action.effectId = effectId
+          return prom.then(() => effectDispatch[methodName](FinishFlag))
+        } else {//finish
+          return true
+        }
+      }
+      return next(action)
+    }
+
     const composeEnhancers = window['__REDUX_DEVTOOLS_EXTENSION_COMPOSE__'] || compose;
     const store = this.store = createStore(combineReducers(reducers), composeEnhancers(
-      applyMiddleware(...modelMiddleware.concat(middleware))
+      applyMiddleware(...modelMiddleware.concat([effectHandler]).concat(middleware))
     ))
+  }
+
+  /**
+   * return the targetting model of the action
+   * @param actionType 
+   */
+  getModel(actionType: string) {
+    const modelId = actionType.split('/')[0]
+    return this.models[modelId]
+  }
+
+  /**
+   * check if an action is targeting a plugin
+   * @param actionType 
+   */
+  isPluginAction(actionType: string) {
+    const modelId = actionType.split('/')[0]
+    return includes(this.pluginIds, modelId)
   }
 
   get dispatch(): T {
@@ -151,13 +204,11 @@ class ServiceStore<T> {
    * it maps state (or calcudated fields) to component props
    */
   get connect() {
-    const { calcFields } = this
-    const connect = function (stateMap: ((state: T) => object), calcMap?: (calc: T) => object) {
+    const { computedFields } = this
+    const connect = function (stateMap: ((state: T) => object)) {
       return function (method: any) {
         return reduxConnect((state: any) => {
-          const map1 = stateMap(state),
-            map2 = calcMap ? calcMap(calcFields as any) : null
-          return { ...map1, ...map2 }
+          return stateMap(mergeComputedFields(state, computedFields))
         })(method) as any
       }
     }
@@ -172,6 +223,14 @@ class ServiceStore<T> {
   }
 }
 
+function mergeComputedFields(state: any, computedFields: any) {
+  const mixedState = {}
+  Object.keys(state).forEach(modelId => {
+    mixedState[modelId] = { ...state[modelId], ...computedFields[modelId] }
+  })
+  return mixedState as any
+}
+
 /* built in models */
 /**
  * for showing loading status
@@ -180,7 +239,7 @@ class Loading {
 
   current: { [actionType: string]: number } = {}
 
-  @calc
+  @computed
   count() {
     const { current } = this
     return Object.keys(current)
@@ -217,8 +276,8 @@ class Logging {
   _skipFields_ = ['effectPool', 'log', 'filter']
   effectPool = {}
   log(type: string, payload: any, state: any, queue: any[] = []) {
-    var modelName = type.split('/')[0]
-    if (state[modelName]) state = state[modelName]
+    var modelId = type.split('/')[0]
+    if (state[modelId]) state = state[modelId]
     console.groupCollapsed(type)
     console.log('payload', payload)
     console.log('state', state)
@@ -245,13 +304,14 @@ class Logging {
   @middleware
   onDispatch(ctx: any, mCtx: any) {
     const { log, filter, effectPool } = (mCtx.model as Logging),
-      { type, isEffectFinish } = mCtx,
+      { type, isEffectFinish, isModelAction } = mCtx,
       { action, next, store } = ctx,
-      result = next(action),
-      state = store.getState(),
-      { effectId, payload } = action
+      result = next(action)
 
-    if (!isFirstUpperCase(type) && filter(ctx, mCtx)) {
+    if (!isModelAction && filter(ctx, mCtx)) {
+      const state = store.getState(),
+        { payload, effectId } = action
+
       if (effectId) {
         if (!effectPool[effectId]) {
           effectPool[effectId] = { start: Date.now(), queue: [], payload }
@@ -277,11 +337,6 @@ class Logging {
   }
 }
 
-function isFirstUpperCase(str: any) {
-  let first = (str + '').charAt(0)
-  return first == first.toUpperCase()
-}
-
 interface Action {
   type: string
   payload: any
@@ -290,8 +345,6 @@ interface Action {
 
 const plugins = { Loading, Logging }
 
-export { ServiceStore, effect, calc, plugins }
-
-
+export { ServiceStore, effect, computed, plugins } 
 
 

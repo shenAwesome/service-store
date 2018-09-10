@@ -6,15 +6,17 @@ Writing Redux can be tedious. Instead of writing the similar boilerplate code ag
 ### Install
 
 ```bash
-yarn add service-store  react-redux immer lodash redux @types/react-redux @types/lodash @types/redux
+yarn add service-store  react-redux immer redux @types/react-redux @types/redux
 -or-
-npm install service-store  react-redux immer lodash redux @types/react-redux @types/lodash @types/redux 
+npm install service-store  react-redux immer redux @types/react-redux @types/redux 
 ```
 ### Usage
 
 # 1 create a model class
 
 ```
+import { ServiceStore, effect, computed, plugins } from 'service-store'
+
 class Cart {
 
     //---------------------- state fields-----------------------
@@ -43,9 +45,9 @@ class Cart {
         this.add(prod)
     }
 
-    //--------------------- calculated fields ----------------------- 
+    //--------------------- computed fields ----------------------- 
     /** total price */
-    @calc
+    @computed
     total() {
         return this.products.reduce((a, b) => a + (b.price * b.amount), 0)
     }
@@ -83,10 +85,9 @@ import { dispatch, connect } from './service'
 
 @connect(state => ({
   name: state.cart.name,
-  count: state.cart.products.length
-}), calc => ({
-  total: calc.cart.total()
-}))
+  count: state.cart.products.length,
+  total: calc.cart.total() //computed field can be used in connect
+})
 class App extends React.Component {
   onClick() {
     dispatch.cart.add({

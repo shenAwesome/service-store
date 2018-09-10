@@ -1,6 +1,6 @@
 {
   "name": "service-store",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "",
   "keywords": [],
   "main": "dist/service-store.umd.js",
@@ -115,7 +115,6 @@
   },
   "dependencies": {
     "immer": "^1.5.0",
-    "lodash": "^4.17.10",
     "react": "^16.4.2",
     "react-redux": "^5.0.7",
     "redux": "^4.0.0"
