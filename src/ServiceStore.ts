@@ -95,7 +95,6 @@ class ServiceStore<T> {
                         let ret = method.call(model_dispatch, { store, next, action }, {
                             type: action.type,
                             isEffect: includes(effectTypes, action.type),
-                            isEffectFinish: action.payload == '_EffectFinish_',
                             isModelAction: this.isPluginAction(action.type),
                             model: model,
                             serviceStore: this
@@ -108,7 +107,7 @@ class ServiceStore<T> {
                     effectTypes.push(actionType)
                     effects[actionType] = { modelId, methodName, method }
                     //a dispatcher ready for firing actions
-                    model_dispatch[methodName] = function(payload: any, effectId?: string) {
+                    model_dispatch[methodName] = function (payload: any, effectId?: string) {
                         return store.dispatch({ type: actionType, payload, effectId })
                     }
                 } else { //reducers 
@@ -123,7 +122,7 @@ class ServiceStore<T> {
                         return ret
                     }
                     //a dispatcher ready for firing actions
-                    model_dispatch[methodName] = function(payload: any, effectId?: string) {
+                    model_dispatch[methodName] = function (payload: any, effectId?: string) {
                         return store.dispatch({ type: actionType, payload, effectId })
                     }
                     model_reducers.push(reducer)
@@ -145,7 +144,10 @@ class ServiceStore<T> {
                 FinishFlag = '_EffectFinish_'
             if (includes(effectTypes, type)) {
                 const { modelId, methodName, method } = effects[type]
-                if (action.effectId != FinishFlag) { //start
+                //console.log(action.effectId)
+                if ((action.effectId + '').startsWith(FinishFlag)) { //start  
+                    return action.payload
+                } else {
                     const effectId = action.effectId || Date.now() + Math.random() + '',
                         model_dispatch = dispatcher[modelId], //todo , patch this 
                         effectDispatch = {}  //make a special dispath to inject effectId to all actions happens in this effect.
@@ -157,9 +159,7 @@ class ServiceStore<T> {
                         prom = method.call(mixedContext, action.payload, store.getState())
                     action.effectId = effectId
                     next(action)
-                    return prom.then((ret: any) => model_dispatch[methodName](ret, FinishFlag))
-                } else {
-                    return action.payload
+                    return prom.then((ret: any) => model_dispatch[methodName](ret, FinishFlag + effectId))
                 }
             }
             return next(action)
@@ -206,8 +206,8 @@ class ServiceStore<T> {
      */
     get connect() {
         const { computedFields } = this
-        const connect = function(stateMap: ((state: T) => object)) {
-            return function(method: any) {
+        const connect = function (stateMap: ((state: T) => object)) {
+            return function (method: any) {
                 return reduxConnect((state: any) => {
                     return stateMap(mergeComputedFields(state, computedFields))
                 })(method) as any
@@ -305,29 +305,30 @@ class Logging {
     @middleware
     onDispatch(ctx: any, mCtx: any) {
         const { log, filter, effectPool } = (mCtx.model as Logging),
-            { type, isEffectFinish, isModelAction } = mCtx,
+            { type, isModelAction } = mCtx,
             { action, next, store } = ctx,
             result = next(action)
 
         if (!isModelAction && filter(ctx, mCtx)) {
             const state = store.getState(),
-                { payload, effectId } = action
+                { payload, effectId } = action as Action
 
             if (effectId) {
-                if (!effectPool[effectId]) {
-                    effectPool[effectId] = { start: Date.now(), queue: [], payload }
+                const isEffectFinish = effectId.startsWith('_EffectFinish_'),
+                    eId = effectId.replace('_EffectFinish_', '')
+
+                if (!effectPool[eId]) {
+                    effectPool[eId] = { start: Date.now(), queue: [], payload }
                 }
-                const { queue, start } = effectPool[effectId],
-                    timePast = (Date.now() - start) + 'ms'
-                if (isEffectFinish) {//take out and log   
-                    const first = queue.shift()
-                    log(`${type} (total:${timePast})`, first.payload, state, queue)
+                const { queue, start } = effectPool[eId],
+                    time = (Date.now() - start) + 'ms'
+                if (isEffectFinish) {//take out and log when effect finishes
+                    if (type == queue[0].type) {
+                        const first = queue.shift()
+                        log(`${type} (total:${time})`, first.payload, state, queue)
+                    }
                 } else {
-                    queue.push({
-                        type, time: timePast,
-                        payload: payload,
-                        state: state
-                    })
+                    queue.push({ type, time, payload, state })
                 }
             } else {
                 log(type, payload, state)
