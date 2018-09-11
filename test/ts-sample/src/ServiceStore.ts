@@ -92,11 +92,13 @@ class ServiceStore<T> {
                 } else if (method.isMiddleware) {// middleware.  all get called on every dispatch 
                     isPlugin = true
                     modelMiddleware.push((store: any) => (next: any) => (action: any) => {
-                        let isEffectFinish = action.effectId.startsWith('_EffectFinish_')
+                        const _effectId = action.effectId || '',
+                            isEffectFinish = _effectId.startsWith('_EffectFinish_')
+
                         let ret = method.call(model_dispatch, { store, next, action }, {
                             type: action.type,
                             isEffect: includes(effectTypes, action.type),
-                            isEffectFinish: isEffectFinish,
+                            isEffectFinish,
                             isModelAction: this.isPluginAction(action.type),
                             model: model,
                             serviceStore: this
@@ -260,8 +262,7 @@ class Loading {
     }
 
     addAction(actionType: string) {
-        let actionCount = this.current[actionType] || 0
-        this.current[actionType] = actionCount + 1
+        this.current[actionType] = (this.current[actionType] || 0) + 1
     }
 
     removeAction(actionType: string) {
@@ -273,10 +274,8 @@ class Loading {
         const { isEffect, isEffectFinish, type } = modelContext
         if (isEffect) {
             if (isEffectFinish) {
-                console.log('remove=' + type)
                 this.removeAction(type)
             } else {
-                console.log('add=' + type)
                 this.addAction(type)
             }
         }
@@ -319,7 +318,7 @@ class Logging {
     @middleware
     onDispatch(ctx: any, mCtx: any) {
         const { log, filter, effectPool } = (mCtx.model as Logging),
-            { type, isModelAction } = mCtx,
+            { type, isModelAction, isEffectFinish } = mCtx,
             { action, next, store } = ctx,
             result = next(action)
 
@@ -328,8 +327,7 @@ class Logging {
                 { payload, effectId } = action as Action
 
             if (effectId) {
-                const isEffectFinish = effectId.startsWith('_EffectFinish_'),
-                    eId = effectId.replace('_EffectFinish_', '')
+                const eId = effectId.replace('_EffectFinish_', '')
 
                 if (!effectPool[eId]) {
                     effectPool[eId] = { start: Date.now(), queue: [], payload }
