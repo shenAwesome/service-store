@@ -1,6 +1,4 @@
-import { ServiceStore, effect, computed, plugins } from 'service-store/src/ServiceStore'
-
-
+import { ServiceStore, effect, computed, plugins } from 'service-store'
 //import { ServiceStore, effect, computed, plugins } from './ServiceStore'
 
 interface Product {
