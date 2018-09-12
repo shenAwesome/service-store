@@ -28,7 +28,7 @@ const effect = createTag('Effect'),
     middleware = createTag('Middleware')
 
 function iterate(obj: object, keys: string[], func: (val: any, key: string) => void) {
-    const skipFields = obj['_skipFields_'] || [],
+    const skipFields = obj['_privateFields_'] || [],
         filter = (k: any) => !(k.startsWith('_') || includes(skipFields, k) || k == 'constructor')
     keys.filter(filter).forEach(key => {
         return func(obj[key], key)
@@ -61,7 +61,6 @@ class ServiceStore<T> {
     public store: Store
     private dispatcher = {}
     private computedFields = {}
-    public pluginIds = [] as string[]
 
     constructor(public models: T, middleware = [] as any[], reducer?: Function) {
 
@@ -69,7 +68,8 @@ class ServiceStore<T> {
             modelMiddleware: any[] = [],
             dispatcher = this.dispatcher,
             effectTypes = [] as string[],
-            effects = {}
+            effects = {},
+            pluginIds = [] as string[]
         each(models as any, (model, modelId) => {  /* for each model, create state, reducers*/
 
             //create state from fields
@@ -87,12 +87,12 @@ class ServiceStore<T> {
                 } else if (method.isMiddleware) {// middleware.  all get called on every dispatch 
                     isPlugin = true
                     modelMiddleware.push((store: any) => (next: any) => (action: any) => {
-                        const { effectId } = action
+                        const { effectId, type } = action
                         let ret = method.call(model_dispatch, { store, next, action }, {
                             isEffect: includes(effectTypes, action.type),
                             isEffectFinish: effectId && effectId.startsWith('_EffectFinish_'),
-                            isModelAction: this.isPluginAction(action.type),
-                            model, type: action.type, serviceStore: this
+                            isPluginAction: includes(pluginIds, type.split('/')[0]),
+                            model, type, serviceStore: this
                         })
                         if (ret == undefined) ret = next(action)
                         return ret
@@ -123,7 +123,7 @@ class ServiceStore<T> {
                 model_reducers.reduce((s, reducer) => reducer(s, action),
                     (state == undefined) ? model_state : state)
             )
-            if (isPlugin) this.pluginIds.push(modelId)
+            if (isPlugin) pluginIds.push(modelId)
         })
 
         /**
@@ -187,15 +187,6 @@ class ServiceStore<T> {
         return this.models[modelId]
     }
 
-    /**
-     * check if an action is targeting a plugin
-     * @param actionType 
-     */
-    isPluginAction(actionType: string) {
-        const modelId = actionType.split('/')[0]
-        return includes(this.pluginIds, modelId)
-    }
-
     get dispatch(): T {
         return this.dispatcher as any
     }
@@ -213,13 +204,13 @@ class ServiceStore<T> {
      */
     get connect() {
         const { computedFields } = this
-        const connect = function (stateMap: ((state: T) => object)) {
-            return function (method: any) {
-                return reduxConnect((state: any) => {
+        const connect = (stateMap: ((state: T) => object)) => ( //decorator factory
+            (method: any) => (//decorator
+                reduxConnect((state: any) => {
                     return stateMap(mergeComputedFields(state, computedFields))
                 })(method) as any
-            }
-        }
+            )
+        )
         return connect
     }
 
@@ -280,7 +271,7 @@ interface LoggingCfg {
     filter: (ctx: any, mCtx: any) => boolean
 }
 class Logging {
-    _skipFields_ = ['effectPool', 'log', 'filter']
+    _privateFields_ = ['effectPool', 'log', 'filter']
     effectPool = {}
     log(type: string, payload: any, state: any, queue: any[] = []) {
         var modelId = type.split('/')[0]
@@ -311,16 +302,16 @@ class Logging {
     @middleware
     onDispatch(ctx: any, mCtx: any) {
         const { log, filter, effectPool } = (mCtx.model as Logging),
-            { type, isModelAction, isEffectFinish } = mCtx,
+            { type, isPluginAction, isEffectFinish } = mCtx,
             { action, next, store } = ctx,
             result = next(action)
 
-        if (!isModelAction && filter(ctx, mCtx)) {
+        if (!isPluginAction && filter(ctx, mCtx)) {
             const state = store.getState(),
                 { payload, effectId } = action as Action
 
             if (effectId) {
-                const eId = effectId.replace('_EffectFinish_', '')
+                const eId = isEffectFinish ? effectId.replace('_EffectFinish_', '') : effectId
 
                 if (!effectPool[eId]) {
                     effectPool[eId] = { start: Date.now(), queue: [], payload }
@@ -331,6 +322,7 @@ class Logging {
                     if (type == queue[0].type) {
                         const first = queue.shift()
                         log(`${type} (total:${time})`, first.payload, state, queue)
+                        delete effectPool[eId]
                     }
                 } else {
                     queue.push({ type, time, payload, state })
