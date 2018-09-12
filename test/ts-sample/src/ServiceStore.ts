@@ -3,6 +3,8 @@ import { createStore, combineReducers, compose, applyMiddleware, Store } from 'r
 import { connect as reduxConnect, Provider as reduxProvider } from 'react-redux'
 import * as React from 'react'
 
+//https://ramdajs.com/
+//https://fitzgen.github.io/wu.js/
 
 function tag(object: any, method: string, tag: string) {
     object[method][tag] = true
@@ -139,7 +141,6 @@ class ServiceStore<T> {
             if (isPlugin) this.pluginIds.push(modelId)
         })
 
-        const currentEffects = {}
         /**
          * the middleware to handle effects
          * @param store 
@@ -150,12 +151,11 @@ class ServiceStore<T> {
             if (includes(effectTypes, type)) {
                 const { modelId, methodName, method } = effects[type]
                 //console.log(action.effectId)
-                if ((action.effectId + '').startsWith(FinishFlag)) { //start  
+                if ((action.effectId + '').startsWith(FinishFlag)) { //finish
                     return action.payload
-                } else {
+                } else { //start an effect
                     if (!action.effectId) {//a root effect
                         action.effectId = Date.now() + Math.random() + ''
-                        currentEffects[action.effectId] = action.type
                     }
                     const { effectId } = action,
                         model_dispatch = dispatcher[modelId], //todo , patch this 
@@ -164,15 +164,12 @@ class ServiceStore<T> {
                         effectDispatch[key] = (payload: any) => fn(payload, effectId)
                     })
                     const modelState = store.getState()[modelId],
-                        mixedContext = { ...modelState, ...effectDispatch },
+                        computed = this.computedFields[modelId],
+                        mixedContext = { ...modelState, ...computed, ...effectDispatch },
                         prom = method.call(mixedContext, action.payload, store.getState())
                     next(action)
                     return prom.then((ret: any) => {
-                        ret = model_dispatch[methodName](ret, FinishFlag + effectId)
-                        if (action.type == currentEffects[effectId]) {//if it's root effect
-                            delete currentEffects[effectId]
-                        }
-                        return ret
+                        return model_dispatch[methodName](ret, FinishFlag + effectId) //send finish signal
                     })
                 }
             }
