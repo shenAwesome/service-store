@@ -6,7 +6,7 @@ import { connect, dispatch } from './service'
   name: state.cart.name,
   count: state.cart.products.length,
   total: state.cart.total(),
-  loading: state.Loadding.count()
+  loading: state.Loading.count()
 }))
 class App extends React.Component {
   onClick() {

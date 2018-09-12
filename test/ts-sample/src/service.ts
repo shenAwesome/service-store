@@ -1,5 +1,5 @@
 //import { ServiceStore, effect, computed, plugins } from 'service-store'
-import { ServiceStore, effect, computed, plugins } from './ServiceStore'
+import { createStore, effect, computed, plugins } from './ServiceStore'
 
 interface Product {
     name: string
@@ -71,8 +71,8 @@ const logger = (store: any) => (next: any) => (action: any) => {
     return result
 }
 
-const { Provider, connect, dispatch } = new ServiceStore({
-    Loadding: new plugins.Loading,
+const { Provider, connect, dispatch } = createStore({
+    Loading: new plugins.Loading,
     Logging: new plugins.Logging,
     cart: new Cart
 }, [])
