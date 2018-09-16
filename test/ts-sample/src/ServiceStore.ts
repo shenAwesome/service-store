@@ -15,17 +15,18 @@ if (!String.prototype.startsWith) {
 //https://fitzgen.github.io/wu.js/
 
 /*--------------decorators----------------*/
-function createTag(tag: string) {
-    return (target: any, key: string) => {
-        target[key]['is' + tag] = true
-    }
+
+const createTag = (tag: string) => (target: any, key: string) => {
+    target[key]['is' + tag] = true
 }
-/**
- * 3 decorator to tag class method  
- */
-const effect = createTag('Effect'),
-    computed = createTag('Computed'),
-    middleware = createTag('Middleware')
+type Tag = (cls: any, method: string) => any
+
+/** effects handles side effects/async tasks  */
+const effect = createTag('Effect') as Tag
+/** computed fields can be used in 'connect', it output values based on state  */
+const computed = createTag('Computed') as Tag
+/** tag a method a middleware, should only be used for plugins  */
+const middleware = createTag('Middleware') as Tag
 
 function iterate(obj: object, keys: string[], func: (val: any, key: string) => void) {
     const skipFields = obj['_privateFields_'] || [],
@@ -34,11 +35,11 @@ function iterate(obj: object, keys: string[], func: (val: any, key: string) => v
         return func(obj[key], key)
     })
 }
-/*iterate object*/
+/**iterate object*/
 function each(obj: object, func: (val: any, key: string) => void) {
     iterate(obj, Object.keys(obj), func)
 }
-/*iterate model methods*/
+/**iterate model methods*/
 function eachMethod(obj: object, func: (val: any, key: string) => void) {
     const keys = Object.getOwnPropertyNames(Object.getPrototypeOf(obj))
     iterate(obj, keys, func)
@@ -143,7 +144,7 @@ class ServiceStore<T> {
                         action.effectId = Date.now() + Math.random() + ''
                     }
                     const { effectId } = action,
-                        model_dispatch = dispatcher[modelId], //todo , patch this 
+                        model_dispatch = dispatcher[modelId],
                         effectDispatch = {}  //make a special dispath to inject effectId to all actions happens in this effect.
                     each(model_dispatch, (fn, key) => {
                         effectDispatch[key] = (payload: any) => fn(payload, effectId)
@@ -154,7 +155,7 @@ class ServiceStore<T> {
                         prom = method.call(mixedContext, action.payload, store.getState())
                     next(action)
                     //effect can be normal function and return non promise
-                    Promise.resolve(prom).then((ret: any) => {
+                    return Promise.resolve(prom).then((ret: any) => {
                         return model_dispatch[methodName](ret, FinishFlag + effectId) //send finish signal
                     })
                 }
@@ -207,7 +208,7 @@ class ServiceStore<T> {
         const connect = (stateMap: ((state: T) => object)) => ( //decorator factory
             (method: any) => (//decorator
                 reduxConnect((state: any) => {
-                    return stateMap(mergeComputedFields(state, computedFields))
+                    return stateMap(mergeFields(state, computedFields))
                 })(method) as any
             )
         )
@@ -222,7 +223,7 @@ class ServiceStore<T> {
     }
 }
 
-function mergeComputedFields(state: any, computedFields: any) {
+function mergeFields(state: any, computedFields: any) {
     const mixedState = {}
     Object.keys(state).forEach(modelId => {
         mixedState[modelId] = { ...state[modelId], ...computedFields[modelId] }
@@ -319,9 +320,11 @@ class Logging {
                 const { queue, start } = effectPool[eId],
                     time = (Date.now() - start) + 'ms'
                 if (isEffectFinish) {//take out and log when effect finishes
+                    //console.log('finish=' + eId)
                     if (type == queue[0].type) {
                         const first = queue.shift()
                         log(`${type} (total:${time})`, first.payload, state, queue)
+                        //console.log('delete=' + eId)
                         delete effectPool[eId]
                     }
                 } else {
