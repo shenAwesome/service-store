@@ -71,7 +71,6 @@ const logger = (store: any) => (next: any) => (action: any) => {
     return result
 }
 
-console.log(computed)
 
 const { Provider, connect, dispatch } = createStore({
     Loading: new plugins.Loading,

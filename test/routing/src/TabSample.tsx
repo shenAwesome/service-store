@@ -1,7 +1,7 @@
 import * as React from 'react';
 import './App.css';
 import { connect, dispatch } from './service'
-import { Link, Router, Route, Container } from './srouter'
+import { Link, Router, Route, Carousel } from './router'
 
 class TabSample extends React.Component {
 
@@ -14,9 +14,9 @@ class TabSample extends React.Component {
           <Link to='Menu1/TabSample/tab3'>tab3</Link>
         </div>
 
-        <Container transitionDuration={400}>{(path: string) => {
+        <Carousel transitionDuration={400}>{(path: string) => {
           return <div className='box' key={path}>{path}</div>
-        }}</Container>
+        }}</Carousel>
       </div>
     )
   }
