@@ -2,37 +2,17 @@ import produce from 'immer'
 import { createStore as reduxCreateStore, combineReducers, compose, applyMiddleware, Store } from 'redux'
 import { connect as reduxConnect, Provider as reduxProvider } from 'react-redux'
 import * as React from 'react'
-
-
-if (!String.prototype.startsWith) {
-    String.prototype.startsWith = function (searchString, position) {
-        position = position || 0;
-        return this.indexOf(searchString, position) === position;
-    }
-}
-
-//https://ramdajs.com/
-//https://fitzgen.github.io/wu.js/
-
-/*--------------decorators----------------*/
-
-const createTag = (tag: string) => (target: any, key: string) => {
-    target[key]['is' + tag] = true
-}
-type Tag = (cls: any, method: string) => any
-
-/** effects handles side effects/async tasks  */
-const effect = createTag('Effect') as Tag
-/** computed fields can be used in 'connect', it output values based on state  */
-const computed = createTag('Computed') as Tag
-/** tag a method a middleware, should only be used for plugins  */
-const middleware = createTag('Middleware') as Tag
+import { Action } from './core'
 
 function iterate(obj: object, keys: string[], func: (val: any, key: string) => void) {
     const skipFields = obj['_privateFields_'] || [],
         filter = (k: any) => !(k.startsWith('_') || includes(skipFields, k) || k == 'constructor')
     keys.filter(filter).forEach(key => {
-        return func(obj[key], key)
+        try {
+            func(obj[key], key)
+        } catch (e) {
+            console.error(key)
+        }
     })
 }
 /**iterate object*/
@@ -151,7 +131,7 @@ class ServiceStore<T> {
                     })
                     const modelState = store.getState()[modelId],
                         computed = this.computedFields[modelId],
-                        mixedContext = { ...modelState, ...computed, ...effectDispatch },
+                        mixedContext = { ...modelState, ...computed, ...effectDispatch, _getDispatch_: this.getDispatch },
                         prom = method.call(mixedContext, action.payload, store.getState())
                     next(action)
                     //effect can be normal function and return non promise
@@ -177,6 +157,11 @@ class ServiceStore<T> {
         const store = this.store = reduxCreateStore(combinedReducer, composeEnhancers(
             applyMiddleware(...modelMiddleware.concat([effectHandler]).concat(middleware))
         ))
+    }
+
+
+    getDispatch = (modelName: string) => {
+        return this.dispatch[modelName]
     }
 
     /**
@@ -221,6 +206,10 @@ class ServiceStore<T> {
             return React.createElement(reduxProvider, { store }, props.children)
         }
     }
+
+    getService = (name: string) => {
+        return this.dispatch[name] as any
+    }
 }
 
 function mergeFields(state: any, computedFields: any) {
@@ -231,127 +220,13 @@ function mergeFields(state: any, computedFields: any) {
     return mixedState as any
 }
 
-/* built in models */
-/**
- * for showing loading status
- */
-class Loading {
-
-    current: { [actionType: string]: number } = {}
-
-    @computed
-    count() {
-        const { current } = this
-        return Object.keys(current)
-            .reduce((count, key) => count + current[key], 0)
-    }
-
-    addAction(actionType: string) {
-        this.current[actionType] = (this.current[actionType] || 0) + 1
-    }
-
-    removeAction(actionType: string) {
-        this.current[actionType] = this.current[actionType] - 1
-    }
-
-    @middleware
-    onDispatch(mwContext: any, modelContext: any) {
-        const { isEffect, isEffectFinish, type } = modelContext
-        if (isEffect) {
-            if (isEffectFinish) {
-                this.removeAction(type)
-            } else {
-                this.addAction(type)
-            }
-        }
-    }
-}
-
-interface LoggingCfg {
-    log: (type: string, payload: any, state: any, queue?: any[]) => void
-    filter: (ctx: any, mCtx: any) => boolean
-}
-class Logging {
-    _privateFields_ = ['effectPool', 'log', 'filter']
-    effectPool = {}
-    log(type: string, payload: any, state: any, queue: any[] = []) {
-        var modelId = type.split('/')[0]
-        if (state[modelId]) state = state[modelId]
-        console.groupCollapsed(type)
-        console.log('payload', payload)
-        console.log('state', state)
-        if (queue.length) {
-            console.groupCollapsed('reducers:' + queue.map(q => q.type).join(','))
-            queue.forEach((q: any) => {
-                console.group(q.type + ' start at ' + q.time)
-                console.log('payload', q.payload)
-                console.log('state', q.state)
-                console.groupEnd()
-            })
-            console.groupEnd()
-        }
-        console.groupEnd()
-    }
-    filter(ctx: any, mCtx: any) {
-        return true
-    }
-
-    constructor(cfg?: Partial<LoggingCfg>) {
-        Object.assign(this, cfg)
-    }
-
-    @middleware
-    onDispatch(ctx: any, mCtx: any) {
-        const { log, filter, effectPool } = (mCtx.model as Logging),
-            { type, isPluginAction, isEffectFinish } = mCtx,
-            { action, next, store } = ctx,
-            result = next(action)
-
-        if (!isPluginAction && filter(ctx, mCtx)) {
-            const state = store.getState(),
-                { payload, effectId } = action as Action
-
-            if (effectId) {
-                const eId = isEffectFinish ? effectId.replace('_EffectFinish_', '') : effectId
-
-                if (!effectPool[eId]) {
-                    effectPool[eId] = { start: Date.now(), queue: [], payload }
-                }
-                const { queue, start } = effectPool[eId],
-                    time = (Date.now() - start) + 'ms'
-                if (isEffectFinish) {//take out and log when effect finishes
-                    //console.log('finish=' + eId)
-                    if (type == queue[0].type) {
-                        const first = queue.shift()
-                        log(`${type} (total:${time})`, first.payload, state, queue)
-                        //console.log('delete=' + eId)
-                        delete effectPool[eId]
-                    }
-                } else {
-                    queue.push({ type, time, payload, state })
-                }
-            } else {
-                log(type, payload, state)
-            }
-        }
-
-        return result
-    }
-}
-
-interface Action {
-    type: string
-    payload: any
-    effectId?: string
-}
-
-const plugins = { Loading, Logging }
 
 function createStore<T>(models: T, middlewares?: Function[], reducer?: Function) {
     return new ServiceStore(models, middlewares, reducer)
 }
 
-export { createStore, effect, computed, plugins }
+
+export { createStore }
 
 
 

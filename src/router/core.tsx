@@ -1,3 +1,4 @@
+import * as console from 'console';
 
 import * as React from 'react';
 import { History } from './History'
@@ -8,8 +9,6 @@ if (!String.prototype.startsWith) {
         return this.indexOf(searchString, position) === position;
     }
 }
-
-
 const { Provider: PathProvier, Consumer: PathConsumer } = React.createContext<string>('');
 const { Provider: ManagerProvier, Consumer: ManagerConsumer } = React.createContext<RouteManager>(null)
 

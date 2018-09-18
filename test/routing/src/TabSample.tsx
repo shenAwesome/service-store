@@ -1,7 +1,8 @@
 import * as React from 'react';
-import './App.css';
-import { connect, dispatch } from './service'
-import { Link, Router, Route, Carousel } from './router'
+
+import { router } from 'service-store'
+const { Link, Carousel } = router
+
 
 class TabSample extends React.Component {
 

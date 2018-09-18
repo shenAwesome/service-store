@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { PathProvier, ManagerProvier, RouteManager } from './core'
 import { History, HashHistory } from './History'
-
+import './Router.scss'
 
 const defaultManager: RouteManager = {
     history: new HashHistory,

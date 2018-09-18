@@ -96,7 +96,7 @@ module.exports = {
       '.jsx',
     ],
     alias: {
-
+      'service-store': path.resolve(__dirname, '../../../'),
       // Support React Native Web
       // https://www.smashingmagazine.com/2016/08/a-glimpse-into-the-future-with-react-native-for-web/
       'react-native': 'react-native-web',
@@ -149,7 +149,11 @@ module.exports = {
               compact: true,
             },
           },
-
+          {
+            test: /\.scss$/,
+            include: paths.appSrc,
+            use: ['style-loader', 'css-loader', 'sass-loader']
+          },
           // Compile .tsx?
           {
             test: /\.(ts|tsx)$/,
@@ -211,7 +215,7 @@ module.exports = {
             // its runtime that would otherwise processed through "file" loader.
             // Also exclude `html` and `json` extensions so they get processed
             // by webpacks internal loaders.
-            exclude: [/\.(js|jsx|mjs)$/, /\.html$/, /\.json$/],
+            exclude: [/\.js$/, /\.html$/, /\.json$/, /\.sass$/, /\.scss$/],
             loader: require.resolve('file-loader'),
             options: {
               name: 'static/media/[name].[hash:8].[ext]',

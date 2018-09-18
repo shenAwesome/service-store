@@ -5,6 +5,7 @@ import camelCase from 'lodash.camelcase'
 import typescript from 'rollup-plugin-typescript2'
 import json from 'rollup-plugin-json'
 const pkg = require('./package.json')
+import collectSass from 'rollup-plugin-collect-sass'
 
 const libraryName = 'service-store'
 
@@ -12,7 +13,7 @@ const globals = {
   //'lodash': 'lodash'
 };
 
-const externals = ["immer", "lodash", "react", "react-redux", "redux"]
+const externals = ["immer", "lodash", "react", "react-redux", "redux", "classnames"]
 
 export default {
   input: `src/index.ts`,
@@ -26,6 +27,7 @@ export default {
   },
   plugins: [
     json(),// Allow json resolution 
+    collectSass(),
     typescript({ useTsconfigDeclarationDir: true }),// Compile TypeScript files 
     commonjs(), // Allow bundling common js modules 
     resolve(),//Allow node_modules resolution https://github.com/rollup/rollup-plugin-node-resolve#usage

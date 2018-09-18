@@ -1,5 +1,5 @@
-//import { ServiceStore, effect, computed, plugins } from 'service-store'
-import { createStore, effect, computed, plugins } from './ServiceStore'
+import { createStore, effect, computed, plugins } from 'service-store'
+
 
 interface Product {
     name: string
@@ -50,6 +50,11 @@ class Cart {
     async async1() {
         await new Promise(resolve => setTimeout(resolve, 1 * 1000))
         console.log('async1 is done')
+        this.add({
+            amount: 1,
+            price: 30,
+            name: 'something'
+        })
         return 100
     }
 
@@ -78,4 +83,4 @@ const { Provider, connect, dispatch } = createStore({
     cart: new Cart
 }, [])
 
-export { Provider, connect, dispatch }
+export { Provider, connect, dispatch, Product }

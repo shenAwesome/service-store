@@ -1,0 +1,86 @@
+@keyframes App-logo-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+body, html, #root {
+    width: 100%;
+    height: 100%;
+    background: white;
+}
+
+.App {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+.menu {
+    background: yellowgreen;
+    width: 200px;
+
+    > .srLink {
+        display: block;
+        margin: 1em;
+        padding: 1em;
+    }
+}
+
+.menu2 {
+    border-right: 1px solid silver;
+    background-color: lightgreen;
+    width: 200px;
+}
+
+.box {
+    margin: 1em;
+    background-color: lightgray;
+    height: calc(100% - 2em);
+    width: calc(100% - 2em);
+    box-sizing: border-box;
+}
+
+.tabs {
+    font-size: 30px;
+    padding: 1em;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+
+    > .head {
+        > a {
+            padding: 2px 1em;
+
+            &.active {
+                outline: none;
+                border-bottom: 2px solid green;
+            }
+        }
+    }
+
+    > .srCarousel {
+        flex-grow: 1;
+        border: 1px solid black;
+        font-size: 20px;
+    }
+}
+
+.Home {
+    button {
+        padding: 1em;
+        margin: 1em;
+        background-color: rgba(0, 0, 0, 0.05);
+        border: 1px solid black;
+        min-width: 10em;
+
+        &:active {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+    }
+}

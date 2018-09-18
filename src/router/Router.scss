@@ -1,0 +1,58 @@
+.srLink {
+    background-color: white;
+    cursor: default;
+    user-select: none;
+}
+
+.srLink:active {
+    background-color: silver;
+}
+
+.srLink.active {
+    outline: 2px solid black;
+}
+
+.srCarousel {
+    flex-grow: 1;
+    font-size: 50px;
+    position: relative;
+    overflow: hidden;
+    min-height: 200px;
+
+    > div {
+        position: absolute;
+        transition: left  2s;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+
+        &.stay {
+            left: 0;
+        }
+
+        &.enter {
+            left: 100%;
+        }
+
+        &.leave {
+            left: -100%;
+        }
+    }
+}
+
+.srFolder {
+    transition: max-width  .3s;
+    overflow: hidden;
+
+    &.hidden {
+        display: none;
+    }
+
+    &.stay {
+        max-width: 200px;
+    }
+
+    &.leave {
+        max-width: 0;
+    }
+}
