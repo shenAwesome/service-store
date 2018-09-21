@@ -6,9 +6,9 @@ Writing Redux can be tedious. Instead of writing the similar boilerplate code ag
 ### Install
 
 ```bash
-yarn add service-store  react-redux immer redux @types/react-redux @types/redux
+yarn add service-store 
 -or-
-npm install service-store  react-redux immer redux @types/react-redux @types/redux 
+npm install service-store 
 ```
 ### Usage
 
