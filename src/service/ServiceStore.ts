@@ -2,7 +2,7 @@ import produce from 'immer'
 import { createStore as reduxCreateStore, combineReducers, compose, applyMiddleware, Store } from 'redux'
 import { connect as reduxConnect, Provider as reduxProvider } from 'react-redux'
 import * as React from 'react'
-import { Action } from './core'
+import { Action, Model, UIBroker } from './core'
 
 function iterate(obj: object, keys: string[], func: (val: any, key: string) => void) {
     const skipFields = obj['_privateFields_'] || [],
@@ -28,9 +28,9 @@ function eachMethod(obj: object, func: (val: any, key: string) => void) {
 function includes(array: any[], item: any) {
     return array.indexOf(item) != -1
 }
-/**
- * yarn add react-redux immer lodash redux
- * yarn add @types/react-redux @types/lodash @types/redux --dev
+
+
+/** 
  * convert class to redux state & action
  * @param cls
  * @param modelId
@@ -42,6 +42,25 @@ class ServiceStore<T> {
     public store: Store
     private dispatcher = {}
     private computedFields = {}
+    public broker = new UIBroker()
+
+    private modelHelper = {
+        getModel: (Class: any) => {
+            const s = this,
+                modelId = s.getModelIdByClass(Class),
+                dispatch = s.dispatch[modelId],
+                state = s.store.getState()[modelId],
+                computed = s.computedFields[modelId]
+            if (!state) {
+                console.error(`${modelId} is not a valid model ID. Currently installed models: ${Object.keys(s.models).join(',')} `)
+                return null
+            }
+            return { ...state, ...computed, ...dispatch }
+        },
+        getBroker: () => {
+            return this.broker
+        }
+    }
 
     constructor(public models: T, middleware = [] as any[], reducer?: Function) {
 
@@ -51,6 +70,7 @@ class ServiceStore<T> {
             effectTypes = [] as string[],
             effects = {},
             pluginIds = [] as string[]
+
         each(models as any, (model, modelId) => {  /* for each model, create state, reducers*/
 
             //create state from fields
@@ -104,7 +124,12 @@ class ServiceStore<T> {
                 model_reducers.reduce((s, reducer) => reducer(s, action),
                     (state == undefined) ? model_state : state)
             )
-            if (isPlugin) pluginIds.push(modelId)
+            if (isPlugin) {
+                pluginIds.push(modelId)
+            }
+            if (model['_init_']) {
+                model['_init_'](this, model_dispatch, modelId)
+            }
         })
 
         /**
@@ -131,11 +156,12 @@ class ServiceStore<T> {
                     })
                     const modelState = store.getState()[modelId],
                         computed = this.computedFields[modelId],
-                        mixedContext = { ...modelState, ...computed, ...effectDispatch, _getDispatch_: this.getDispatch },
-                        prom = method.call(mixedContext, action.payload, store.getState())
+                        helper = (models[modelId] instanceof Model) ? this.modelHelper : null,
+                        mixedContext = { ...modelState, ...computed, ...effectDispatch, ...helper },
+                        ret = method.call(mixedContext, action.payload, store.getState())
                     next(action)
                     //effect can be normal function and return non promise
-                    return Promise.resolve(prom).then((ret: any) => {
+                    return Promise.resolve(ret).then((ret: any) => {
                         return model_dispatch[methodName](ret, FinishFlag + effectId) //send finish signal
                     })
                 }
@@ -159,19 +185,24 @@ class ServiceStore<T> {
         ))
     }
 
-
-    getDispatch = (modelName: string) => {
-        return this.dispatch[modelName]
-    }
-
     /**
      * return the targetting model of the action
      * @param actionType 
      */
-    getModel(actionType: string) {
+    getModelByActionType(actionType: string) {
         const modelId = actionType.split('/')[0]
         return this.models[modelId]
     }
+
+    getModelIdByClass(actionType: any) {
+        let modelId: string = null
+        each(this.models as any, (val: any, key: string) => {
+            const match = (val instanceof actionType)
+            if (match) modelId = key
+        })
+        return modelId
+    }
+
 
     get dispatch(): T {
         return this.dispatcher as any
@@ -193,11 +224,22 @@ class ServiceStore<T> {
         const connect = (stateMap: ((state: T) => object)) => ( //decorator factory
             (method: any) => (//decorator
                 reduxConnect((state: any) => {
-                    return stateMap(mergeFields(state, computedFields))
+                    return stateMap(this.mergeFields(state, computedFields))
                 })(method) as any
             )
         )
         return connect
+    }
+
+    private mergeFields(state: any, computedFields: any) {
+        const mixedState = {}
+        Object.keys(state).forEach(modelId => {
+            const mState = mixedState[modelId] = { ...state[modelId], ...computedFields[modelId] }
+            if (this.models[modelId] instanceof Model) {
+                Object.assign(mState, this.modelHelper)
+            }
+        })
+        return mixedState as any
     }
 
     get Provider() {
@@ -212,13 +254,7 @@ class ServiceStore<T> {
     }
 }
 
-function mergeFields(state: any, computedFields: any) {
-    const mixedState = {}
-    Object.keys(state).forEach(modelId => {
-        mixedState[modelId] = { ...state[modelId], ...computedFields[modelId] }
-    })
-    return mixedState as any
-}
+
 
 
 function createStore<T>(models: T, middlewares?: Function[], reducer?: Function) {
@@ -226,7 +262,7 @@ function createStore<T>(models: T, middlewares?: Function[], reducer?: Function)
 }
 
 
-export { createStore }
+export { createStore, ServiceStore }
 
 
 

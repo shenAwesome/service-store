@@ -1,11 +1,15 @@
 import { createStore, plugins } from '..'
-import { effect, getService } from '../service/core';
+import { effect, Model } from '../service/core';
+import { Tools } from '../service/plugins/Tools'
+import { createToolsUI } from '../service/plugins/ToolsUI'
+import { createLoadingUI } from '../service/plugins/LoadingUI'
+
 
 function delay(sec: number) {
   return new Promise(resolve => setTimeout(resolve, sec * 1000))
 }
 
-class Test {
+class Test extends Model {
   points = 0
 
   add(change: number) {
@@ -18,7 +22,7 @@ class Test {
     this.points += 1000 //this has no effect, state is readonly for effect 
     let rnd = await this.random() //effect can read from other effects via 'await'
     console.log('rnd=' + rnd)
-    let common = getService<Common>('common', this)   //call reducers or effects on other model
+    let common = this.getModel(Common)   //call reducers or effects on other model
     common.hi('Jack')
     let greet = await common.greet('Jack')
     console.log(greet)
@@ -32,6 +36,19 @@ class Test {
     return Math.round(Math.random() * 10)
   }
 
+  @effect
+  async testInteractions() {
+    const $ = this.getModel(Tools)
+    await $.sleep(1000)
+    const ret = await $.showDialog({
+      message: "want to start?",
+      buttons: ["YES", "NO"]
+    })
+    await $.sleep(2000)
+    await $.showDialog({
+      message: "you have clicked " + ((ret == 0) ? 'YES' : 'NO')
+    })
+  }
 }
 
 
@@ -48,10 +65,16 @@ class Common {
   }
 }
 
-const { Provider, connect, dispatch } = createStore({
-  test: new Test(),
-  common: new Common(),
-  Loading: new plugins.Loading()
-})
 
-export { Provider, connect, dispatch }
+const store = createStore({
+  Loading: new plugins.Loading(),
+  Tools: new plugins.Tools(),
+  test: new Test(),
+  common: new Common()
+})
+const { Provider, connect, dispatch } = store
+//plugin UI components
+const ToolsUI = createToolsUI(store)
+const LoadingUI = createLoadingUI(store)
+
+export { Provider, connect, dispatch, ToolsUI, LoadingUI }

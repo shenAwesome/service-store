@@ -1,19 +1,5 @@
 
-
-if (!String.prototype.startsWith) {
-    String.prototype.startsWith = function (searchString, position) {
-        position = position || 0;
-        return this.indexOf(searchString, position) === position;
-    }
-}
-if (!String.prototype.endsWith) {
-    String.prototype.endsWith = function (search, this_len) {
-        if (this_len === undefined || this_len > this.length) {
-            this_len = this.length;
-        }
-        return this.substring(this_len - search.length, this_len) === search;
-    };
-}
+import './polyfill';
 
 
 interface Action {
@@ -34,11 +20,74 @@ const computed = createTag('Computed') as Tag
 /** tag a method a middleware, should only be used for plugins  */
 const middleware = createTag('Middleware') as Tag
 
-function getService<T>(name: string, context: any): T {
-    return context['_getDispatch_'](name)
+/**
+ * Model class provides helper methods like getSibling.
+ * It's not mandatory for a model to extend this class, unless it needs those methods
+ */
+class Model {
+
+    /**
+     * fetch sibling model for reading its state or calling its reducer/effect
+     * @param modelId 
+     */
+    protected getModel<T>(Class: new () => T): T {
+        return null
+    }
+
+    getBroker(): UIBroker {
+        return null
+    }
+
+    test<T>(t: new () => T) {
+
+    }
 }
 
-export { effect, computed, middleware, Action, getService }
+/**
+ * the UI Broker handls small user interaction, like alert or prompt
+ */
+class UIBroker {
+    private pool: { [pid: string]: Function } = {}
+
+    run(onStart: (id: string) => void, onFinish?: (ret: any) => void) {
+        const { pool } = this,
+            id = this.createUniqId()
+        return new Promise(resolve => {
+            onStart(id)
+            pool[id] = (ret: any) => {
+                if (onFinish) onFinish(ret)
+                resolve(ret)
+            }
+            this.notify()
+        })
+    }
+
+    private createUniqId() {
+        return (Date.now().toString(36) + Math.random().toString(36).substr(2, 5)).toUpperCase()
+    }
+
+    solve(pid, ret) {
+        const solve = this.pool[pid]
+        solve(ret)
+        delete this.pool[pid]
+        this.notify()
+    }
+
+    get count() {
+        return Object.keys(this.pool).length
+    }
+
+    private notify() {
+        this.observers.forEach(ob => ob(this))
+    }
+
+    private observers = []
+    addObserver(ob: (brokder: UIBroker) => void) {
+        this.observers.push(ob)
+    }
+}
+
+export { effect, computed, middleware, Action, Model, UIBroker }
 
 
 

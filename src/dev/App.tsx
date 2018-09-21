@@ -13,6 +13,10 @@ class App extends React.Component {
       <div>points:{points}</div>
       <button onClick={this.add}>add</button>
       <button onClick={this.add2}>async add</button>
+      <br />
+      <button onClick={this.alert}>alert</button>
+      <br />
+      <button onClick={this.testInteraction}>testInteraction</button>
     </div>
   }
 
@@ -22,6 +26,19 @@ class App extends React.Component {
 
   add2 = () => {
     dispatch.test.add2(1)
+  }
+
+  testInteraction = () => {
+    dispatch.test.testInteractions()
+  }
+
+  alert = () => {
+    //dispatch.test.testAlert('some message')
+    dispatch.Tools.showDialog({
+      title: 'this is title',
+      message: 'this is body',
+      buttons: ['OK', 'Cancel']
+    })
   }
 }
 

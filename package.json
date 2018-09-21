@@ -103,8 +103,8 @@
     "prettier": "^1.13.4",
     "prompt": "^1.0.0",
     "react": "^16.4.2",
-    "react-redux": "^5.0.7",
     "react-dom": "^16.5.1",
+    "react-redux": "^5.0.7",
     "replace-in-file": "^3.0.0-beta.2",
     "rimraf": "^2.6.1",
     "rollup": "^0.59.2",
@@ -134,6 +134,7 @@
   "dependencies": {
     "classnames": "^2.2.6",
     "immer": "^1.5.0",
+    "promise-polyfill": "^8.1.0",
     "react": "^16.4.2",
     "react-redux": "^5.0.7",
     "redux": "^4.0.0"

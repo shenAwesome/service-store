@@ -1,0 +1,84 @@
+.ToolsUI {
+    font-size: 14px;
+
+    > .container {
+        position: fixed;
+        left: 0;
+        top: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        width: 100vw;
+        z-index: 100;
+
+        > .Alert {
+            border: 1px solid silver;
+            min-width: 30%;
+            min-height: 100px;
+            box-shadow: 1px 3px 3px 0 rgba(0, 0, 0, 0.2), 1px 3px 15px 2px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-flow: column;
+            border-radius: .2rem;
+            z-index: 101;
+            background-color: white;
+
+            > .header {
+                padding: 1.25rem 1.5rem;
+                font-size: 1.3em;
+                border-bottom: 1px solid rgba(34, 36, 38, 0.15);
+            }
+
+            > .content {
+                flex-grow: 1;
+                padding: 1.25rem 1.5rem;
+            }
+
+            > .actions {
+                text-align: right;
+                background-color: #f9fafb;
+                border-top: 1px solid rgba(34, 36, 38, 0.15);
+
+                > button {
+                    font-weight: 700;
+                    margin: 1rem;
+                    margin-left: 0;
+                    padding: .8em 1.5em .7em;
+                    border-radius: .2rem;
+                    border: 1px solid silver;
+                    background-color: white;
+                    color: gray;
+                    user-select: none;
+
+                    &:hover {
+                        background-color: rgba(0, 0, 0, 0.02);
+                        box-shadow: 1px 1px 1px 0 rgba(0, 0, 0, 0.05);
+                    }
+
+                    &:first-child {
+                        background-color: #2185d0;
+                        border-color: #2185d0;
+                        color: white;
+                        margin-left: 1rem;
+
+                        &:hover {
+                            background-color: #136db3;
+                        }
+                    }
+                }
+            }
+        }
+
+        .AlertMask {
+            z-index: 100;
+            content: "test";
+            display: block;
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            width: 100vw;
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+    }
+}

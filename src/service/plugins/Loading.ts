@@ -1,5 +1,5 @@
 
-import { computed, middleware, Action } from '../core'
+import { computed, middleware, Action, UIBroker } from '../core'
 
 /* built in models */
 /**
@@ -8,6 +8,7 @@ import { computed, middleware, Action } from '../core'
 class Loading {
 
     current: { [actionType: string]: number } = {}
+    brokerSessionCount = 0
 
     @computed
     count() {
@@ -34,6 +35,17 @@ class Loading {
                 this.addAction(type)
             }
         }
+    }
+
+    setBrokerSessionCount(count) {
+        this.brokerSessionCount = count
+    }
+
+    _init_(store: any, dispatch: Loading, modelId: string) {
+        const broker = store.broker as UIBroker
+        broker.addObserver(ob => {
+            dispatch.setBrokerSessionCount(ob.count)
+        })
     }
 }
 
