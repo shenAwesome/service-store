@@ -1,6 +1,5 @@
-import { computed, middleware, Action, effect, Model } from '../core'
-import * as React from 'react'
-import { createUI } from './ToolsUI'
+import { effect, Model } from '../core'
+import { createUI } from './ui/ToolsUI'
 
 /**
  * Tools plugin provides common functions, it needs to work together with ToolsUI component
@@ -41,8 +40,7 @@ class Tools extends Model {
   }
 
   onModelInstalled(store: any, dispatch: Tools, modelId: string) {
-    const UI = createUI(store)
-    store.pluginUIs.push(UI)
+    store.pluginUIs.push(createUI(store))
   }
 }
 

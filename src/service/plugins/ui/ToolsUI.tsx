@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { UIBroker } from '../core';
-import { Tools } from './Tools'
-import { ServiceStore } from '../ServiceStore'
+import { UIBroker } from '../../core';
+import { Tools } from '../Tools'
+import { ServiceStore } from '../../ServiceStore'
 import './ToolsUI.scss'
 
 class ToolsUI extends React.PureComponent {

@@ -6,11 +6,11 @@ interface Action {
   effectId?: string
 }
 
+type Tag = (cls: any, method: string) => any
+
 const createTag = (tag: string) => (target: any, key: string) => {
   target[key]['is' + tag] = true
 }
-type Tag = (cls: any, method: string) => any
-
 /** effects handles side effects/async tasks  */
 const effect = createTag('Effect') as Tag
 /** computed fields can be used in 'connect', it output values based on state  */
@@ -39,10 +39,15 @@ class Model {
   protected onModelInstalled(storeSore: any, dispatch: any, modelId: string) {}
 }
 
+/**
+ * Implement Plugin to provide common functions like logging, displaying loading bar
+ * Plugin class doesn't provide any extra function than Model class, at the moment
+ */
 class Plugin extends Model {}
 
 /**
- * the UI Broker handls small user interaction, like alert or prompt
+ * the UI Broker handls small user interaction, like alert or prompt.
+ * service store contains a single broker.
  */
 class UIBroker {
   private pool: { [pid: string]: Function } = {}

@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Loading } from './Loading'
-import { ServiceStore } from '../ServiceStore'
+import { Loading } from '../Loading'
+import { ServiceStore } from '../../ServiceStore'
 import './LoadingUI.scss'
 
 class LoadingUI extends React.PureComponent {

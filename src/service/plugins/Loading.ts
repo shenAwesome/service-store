@@ -1,5 +1,5 @@
 import { computed, middleware, Plugin, UIBroker } from '../core'
-import { createUI } from './LoadingUI'
+import { createUI } from './ui/LoadingUI'
 /* built in models */
 /**
  * for showing loading status
@@ -43,8 +43,7 @@ class Loading extends Plugin {
     broker.addObserver(ob => {
       dispatch.setBrokerSessionCount(ob.count)
     })
-    const UI = createUI(store)
-    store.pluginUIs.push(UI)
+    store.pluginUIs.push(createUI(store))
   }
 }
 
