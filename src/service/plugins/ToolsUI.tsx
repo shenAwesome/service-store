@@ -43,7 +43,7 @@ class Alert extends React.Component<{
 }
 
 
-function createToolsUI(store: ServiceStore<any>) {
+function createUI(store: ServiceStore<any>) {
   const { connect } = store,
     modelId = store.getModelIdByClass(Tools)
   const Cls = connect(s => {
@@ -57,4 +57,4 @@ function createToolsUI(store: ServiceStore<any>) {
   return Cls
 }
 
-export { createToolsUI }
+export { createUI }

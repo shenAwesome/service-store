@@ -1,11 +1,16 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import App from './App';
-import './index.css';
+import { App } from './App'
 
-import { Provider } from './service'
+import { Provider, ToolsUI, LoadingUI } from './service'
 
 ReactDOM.render(
-  <Provider><App /></Provider>,
-  document.getElementById('root') as HTMLElement
-); 
+  <Provider>
+    <div>
+      <App />
+      <ToolsUI />
+      <LoadingUI />
+    </div>
+  </Provider>,
+  document.getElementById('root')
+);

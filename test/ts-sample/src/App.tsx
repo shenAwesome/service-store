@@ -1,5 +1,4 @@
 import * as React from 'react';
-import './App.css';
 import { connect, dispatch } from './service'
 
 @connect(state => ({
@@ -23,19 +22,24 @@ class App extends React.Component {
       amount: 1
     })
   }
+
+  testInteraction() {
+    dispatch.model2.testInteractions();
+  }
+
   public render() {
     //console.log(this.props)
     const { count, total, loading } = this.props as any
     return (
-      <div className="App" style={{ padding: '100px', fontSize: '50px' }}>
+      <div className="App" style={{ padding: '10px', fontSize: '50px' }}>
         <div>count:{count}</div>
         <div>total:{total}</div>
-        <button onClick={this.onClick}>add</button>
-        <button onClick={this.onClick2}>addAsync</button>
-        <div>loading={loading}</div>
+        <button onClick={this.onClick}>add</button><br />
+        <button onClick={this.onClick2}>addAsync</button><br />
+        <button onClick={this.testInteraction}>testInteraction</button><br />
       </div >
     );
   }
 }
 
-export default App;
+export { App }

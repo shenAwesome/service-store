@@ -14,7 +14,7 @@ class LoadingUI extends React.PureComponent {
     }
 }
 
-function createLoadingUI(store: ServiceStore<any>) {
+function createUI(store: ServiceStore<any>) {
     const { connect } = store,
         modelId = store.getModelIdByClass(Loading)
     const Cls = connect(s => {
@@ -25,4 +25,4 @@ function createLoadingUI(store: ServiceStore<any>) {
     return Cls
 }
 
-export { createLoadingUI }
+export { createUI }

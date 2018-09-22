@@ -1,8 +1,6 @@
 import { createStore, plugins } from '..'
 import { effect, Model } from '../service/core';
 import { Tools } from '../service/plugins/Tools'
-import { createToolsUI } from '../service/plugins/ToolsUI'
-import { createLoadingUI } from '../service/plugins/LoadingUI'
 
 
 function delay(sec: number) {
@@ -66,15 +64,11 @@ class Common {
 }
 
 
-const store = createStore({
+const { Provider, connect, dispatch } = createStore({
   Loading: new plugins.Loading(),
   Tools: new plugins.Tools(),
   test: new Test(),
   common: new Common()
 })
-const { Provider, connect, dispatch } = store
-//plugin UI components
-const ToolsUI = createToolsUI(store)
-const LoadingUI = createLoadingUI(store)
 
-export { Provider, connect, dispatch, ToolsUI, LoadingUI }
+export { Provider, connect, dispatch }
