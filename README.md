@@ -1,6 +1,8 @@
 # ServiceStore
 Writing Redux can be tedious. Instead of writing the similar boilerplate code again and again, with ServiceStore you can write model classes, which will be automatically converted to redux store, actions & reducers.
 
+online demo: https://codesandbox.io/s/3080p3y2j5
+
 ![](https://shenawesome.github.io/img/ServiceStore.jpg)
 
 ### Install
