@@ -1,12 +1,12 @@
 import { computed, middleware, Plugin, UIBroker } from '../core'
-import { createUI } from './LoadingUI'
+import { createUI } from './ui/LoadingUI'
 /* built in models */
 /**
  * for showing loading status
  */
 class Loading extends Plugin {
   current: { [actionType: string]: number } = {}
-  brokerSessionCount = 0
+  uiSessionCount = 0
 
   @computed
   count() {
@@ -34,17 +34,14 @@ class Loading extends Plugin {
     }
   }
 
-  setBrokerSessionCount(count) {
-    this.brokerSessionCount = count
+  setUiSessionCount(count) {
+    this.uiSessionCount = count
   }
 
   onModelInstalled(store: any, dispatch: Loading, modelId: string) {
     const broker = store.broker as UIBroker
-    broker.addObserver(ob => {
-      dispatch.setBrokerSessionCount(ob.count)
-    })
-    const UI = createUI(store)
-    store.pluginUIs.push(UI)
+    broker.addObserver(ob => dispatch.setUiSessionCount(ob.count))
+    store.pluginUIs.push(createUI(store))
   }
 }
 

@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Loading } from './Loading'
-import { ServiceStore } from '../ServiceStore'
+import { Loading } from '../Loading'
+import { ServiceStore } from '../../ServiceStore'
 import './LoadingUI.scss'
 
 class LoadingUI extends React.PureComponent {
@@ -18,8 +18,8 @@ function createUI(store: ServiceStore<any>) {
     const { connect } = store,
         modelId = store.getModelIdByClass(Loading)
     const Cls = connect(s => {
-        const model = (s[modelId] as Loading)
-        const isLoading = (model.brokerSessionCount == 0) && (model.count() > 0)
+        const model = (s[modelId] as Loading),
+            isLoading = (model.uiSessionCount == 0) && (model.count() > 0)
         return { isLoading }
     })(LoadingUI)
     return Cls
