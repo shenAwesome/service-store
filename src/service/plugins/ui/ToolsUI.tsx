@@ -6,42 +6,63 @@ import './ToolsUI.scss'
 
 class ToolsUI extends React.PureComponent {
   render() {
-    const { dialogs, broker } = this.props as any
-    const dialogsEle = (dialogs && dialogs.length) ?
-      dialogs.map(a => <Alert config={a} broker={broker} key={a.id} />) : null
+    const { broker, dialogs, progress } = this.props as any,
+      dialogsEle = (dialogs && dialogs.length) ?
+        dialogs.map(a => <Dialog config={a} broker={broker} key={'dialog_' + a.id} />) : null,
+      progressEle = (progress && progress.percentage > 0) ?
+        <Progress config={progress} broker={broker} key='progress' /> : null
+
 
     return <div className='ToolsUI'>
       {dialogsEle}
+      {progressEle}
     </div>
   }
 }
 
-class Alert extends React.Component<{
-  broker: UIBroker,
-  config: any
-}> {
+class Dialog extends React.Component<any> {
   render() {
-    const { config } = this.props,
+    const { config } = this.props as any,
       { title, message } = config
     const buttons = config.buttons || ['OK']
     return <div className='container'>
-      <div className="Alert">
+      <div className="Dialog">
         {(title) ? <div className='header'>{title}</div> : null}
         <div className='content'>{message}</div>
         <div className='actions'>{buttons.map((b, i) => <button key={b} onClick={() => {
           this.btnClick(i)
         }}>{b}</button>)}</div>
       </div>
-      <div className="AlertMask" />
+      <div className="DialogMask" />
     </div>
   }
 
   btnClick = (idx: number) => {
-    const { broker, config } = this.props
+    const { broker, config } = this.props as any
     broker.solve(config.id, idx)
   }
 }
 
+
+class Progress extends React.Component<any> {
+  render() {
+    const { broker, config } = this.props as any,
+      { percentage, message } = config,
+      label = parseInt(percentage) + '%',
+      barStyle = { width: label }
+
+    console.log(config)
+    return <div className='container'>
+      <div className="Dialog Progress">
+        <div className='content'>{message}</div>
+        <div className='bar meter'>
+          <span style={barStyle} >{percentage <= 100 ? label : ''}</span>
+        </div>
+      </div>
+      <div className="DialogMask" />
+    </div>
+  }
+}
 
 function createUI(store: ServiceStore<any>) {
   const { connect } = store,

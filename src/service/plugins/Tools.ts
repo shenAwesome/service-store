@@ -35,8 +35,8 @@ class Tools extends Model {
     })
   }
 
-  showProgress(progress: { percentage: number; message: string }) {
-    this.progress = progress
+  showProgress(progress: { percentage?: number; message?: string }) {
+    Object.assign(this.progress, progress)
   }
 
   onModelInstalled(store: any, dispatch: Tools, modelId: string) {

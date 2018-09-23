@@ -37,15 +37,28 @@ class Test extends Model {
   @effect
   async testInteractions() {
     const $ = this.getModel(Tools)
-    await $.sleep(1000)
+    await $.sleep(500)
     const ret = await $.showDialog({
       message: "want to start?",
       buttons: ["YES", "NO"]
     })
-    await $.sleep(2000)
+    await $.sleep(500)
     await $.showDialog({
       message: "you have clicked " + ((ret == 0) ? 'YES' : 'NO')
     })
+  }
+
+  @effect
+  async showProgress() {
+    const $ = this.getModel(Tools)
+    let p = 0
+    while (true) {
+      $.showProgress({ percentage: p, message: 'loading ' + p })
+      p += 10
+      await $.sleep(1000 * Math.random())
+      if (p > 200) break;
+    }
+    $.showProgress({ percentage: -1 })
   }
 }
 
