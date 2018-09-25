@@ -49,7 +49,7 @@ commonConfig = {
     plugins: [
         //new CheckerPlugin(),
         //new StyleLintPlugin(),
-        new HtmlWebpackPlugin({ template: './dev/index.html', }),
+        new HtmlWebpackPlugin({ template: './test/index.html', }),
     ],
 
     performance: {
@@ -60,7 +60,7 @@ commonConfig = {
 module.exports = merge(commonConfig, {
     mode: 'development',
     entry: [
-        './dev/index.tsx' // the entry point of our app
+        './test/index.tsx' // the entry point of our app
     ],
     devServer: {
         hot: true, // enable HMR on the server

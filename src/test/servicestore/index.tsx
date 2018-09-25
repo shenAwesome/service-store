@@ -4,9 +4,11 @@ import { App } from './App'
 
 import { Provider } from './service'
 
-ReactDOM.render(
-  <Provider>
-    <App />
-  </Provider>,
-  document.getElementById('root')
-);
+export function run() {
+  ReactDOM.render(
+    <Provider>
+      <App />
+    </Provider>,
+    document.getElementById('root')
+  )
+}

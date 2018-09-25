@@ -4,6 +4,7 @@ interface Action {
   type: string
   payload: any
   effectId?: string
+  isEffectFinish?: boolean
 }
 
 type Tag = (cls: any, method: string) => any
@@ -36,14 +37,14 @@ class Model {
   }
 
   /** trigged when model is installed  */
-  protected onModelInstalled(storeSore: any, dispatch: any, modelId: string) {}
+  protected onModelInstalled(storeSore: any, dispatch: any, modelId: string) { }
 }
 
 /**
  * Implement Plugin to provide common functions like logging, displaying loading bar
  * Plugin class doesn't provide any extra function than Model class, at the moment
  */
-class Plugin extends Model {}
+class Plugin extends Model { }
 
 /**
  * the UI Broker handls small user interaction, like alert or prompt.

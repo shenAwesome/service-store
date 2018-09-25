@@ -1,17 +1,18 @@
 import * as React from 'react';
-import { UIBroker } from '../../core';
 import { Tools } from '../Tools'
 import { ServiceStore } from '../../ServiceStore'
+import * as classNames from 'classnames'
 import './ToolsUI.scss'
 
 class ToolsUI extends React.PureComponent {
   render() {
     const { broker, dialogs, progress } = this.props as any,
       dialogsEle = (dialogs && dialogs.length) ?
-        dialogs.map(a => <Dialog config={a} broker={broker} key={'dialog_' + a.id} />) : null,
+        dialogs.map((a, i) => (
+          <Dialog config={a} broker={broker} key={'dialog_' + a.id} />
+        )) : null,
       progressEle = (progress && progress.percentage > 0) ?
         <Progress config={progress} broker={broker} key='progress' /> : null
-
 
     return <div className='ToolsUI'>
       {dialogsEle}
@@ -22,11 +23,14 @@ class ToolsUI extends React.PureComponent {
 
 class Dialog extends React.Component<any> {
   render() {
-    const { config } = this.props as any,
+    const { config, className } = this.props as any,
       { title, message } = config
     const buttons = config.buttons || ['OK']
+
+    console.log(classNames("Dialog", className))
+
     return <div className='container'>
-      <div className="Dialog">
+      <div className={classNames("Dialog", className)}>
         {(title) ? <div className='header'>{title}</div> : null}
         <div className='content'>{message}</div>
         <div className='actions'>{buttons.map((b, i) => <button key={b} onClick={() => {

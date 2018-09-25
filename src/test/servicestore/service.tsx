@@ -1,6 +1,5 @@
-import { createStore, plugins } from '..'
-import { effect, Model } from '../service/core';
-import { Tools } from '../service/plugins/Tools'
+import { createStore, plugins, effect, Model } from '../..'
+const { Tools } = plugins
 
 
 function delay(sec: number) {
@@ -16,7 +15,7 @@ class Test extends Model {
 
   @effect
   async add2(min: number) {  //effects should all be async
-    console.log('effect started', this.points, min) //effect can read state and argument
+    //console.log('effect started', this.points, min) //effect can read state and argument 
     this.points += 1000 //this has no effect, state is readonly for effect 
     let rnd = await this.random() //effect can read from other effects via 'await'
     console.log('rnd=' + rnd)
@@ -24,13 +23,12 @@ class Test extends Model {
     common.hi('Jack')
     let greet = await common.greet('Jack')
     console.log(greet)
-    this.add(rnd) //effect can call reducer to change state
-    console.log('effect finished')
+    this.add(rnd) //effect can call reducer to change state 
   }
 
   @effect
   async random() {
-    await delay(.5) //delay 
+    await delay(1) //delay 
     return Math.round(Math.random() * 10)
   }
 
@@ -80,6 +78,7 @@ class Common {
 const { Provider, connect, dispatch } = createStore({
   Loading: new plugins.Loading(),
   Tools: new plugins.Tools(),
+  Logging: new plugins.Logging(),
   test: new Test(),
   common: new Common()
 })

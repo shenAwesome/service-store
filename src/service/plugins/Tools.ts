@@ -35,7 +35,7 @@ class Tools extends Model {
     })
   }
 
-  showProgress(progress: { percentage?: number; message?: string }) {
+  showProgress(progress: Partial<{ percentage: number; message: string }>) {
     Object.assign(this.progress, progress)
   }
 

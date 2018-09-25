@@ -10,6 +10,8 @@ interface TransitionProp {
     component?: JSX.Element
     transitionDuration?: number
     getClassName?: (action: string) => string
+    transFirst?: boolean
+    injectClass?: boolean
 }
 interface TransitionState {
     components: CompInfo[]
@@ -18,7 +20,9 @@ interface TransitionState {
 class Transition extends React.PureComponent<TransitionProp, TransitionState> {
     static defaultProps: Partial<TransitionProp> = {
         transitionDuration: 300,
-        getClassName: (action: string) => action
+        getClassName: (action: string) => action,
+        transFirst: false,
+        injectClass: false
     }
 
     state: TransitionState = {
@@ -32,14 +36,14 @@ class Transition extends React.PureComponent<TransitionProp, TransitionState> {
         const oldComps = state.components.map(info => info.comp),
             newComps = props.component ? [props.component] : React.Children.toArray(props['children']) as JSX.Element[]
 
-        const init = (oldComps.length == 0),
+        const skip = (oldComps.length == 0) && (!props.transFirst),
             sampeComp = (oldComps.length == 1 && newComps.length == 1 && oldComps[0] == newComps[0])
 
         const newCompInfos = newComps.map(newComp => {
             const existing = oldComps.some(co => co == newComp)
             return {
                 comp: newComp as JSX.Element,
-                action: existing || init || sampeComp ? '' : 'WillEnter'
+                action: existing || skip || sampeComp ? '' : 'WillEnter'
             }
         })
         const toLeave = oldComps.filter(c => newComps.indexOf(c) == -1).map(c => ({
@@ -54,10 +58,15 @@ class Transition extends React.PureComponent<TransitionProp, TransitionState> {
 
     render() {
         const { components } = this.state,
-            { getClassName } = this.props
-        return <>{components.map((c: CompInfo, i) => <div key={i} style={{
-            transitionDuration: (this.props.transitionDuration) + 'ms'
-        }} className={getClassName(c.action)}>{c.comp}</div>)}</>
+            { getClassName, injectClass } = this.props
+        return <>{components.map((c: CompInfo, i) => {
+            const className = getClassName(c.action)
+            return (injectClass) ? (
+                React.cloneElement(c.comp, { ...c.comp.props, ...{ className, key: i } })
+            ) : <div key={i} style={{
+                transitionDuration: (this.props.transitionDuration) + 'ms'
+            }} className={getClassName(c.action)}>{c.comp}</div>
+        })}</>
     }
 
 
@@ -93,6 +102,13 @@ class Transition extends React.PureComponent<TransitionProp, TransitionState> {
     }
 
     componentDidUpdate() {
+        this.checkAnimation()
+    }
+    componentDidMount() {
+        this.checkAnimation()
+    }
+
+    checkAnimation() {
         const { components } = this.state
         if (components.some(c => c.action.startsWith('Will'))) {
             const timers = this.clearTimer()

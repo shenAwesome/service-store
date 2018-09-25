@@ -1,7 +1,7 @@
 import * as React from 'react';
 import classnames from 'classnames'
 import { withPath, withManager, RouteManager } from './core'
-import { Transition } from './Transition'
+import { Transition } from '../util/Transition'
 
 
 interface CarouselProp {
