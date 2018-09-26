@@ -39,19 +39,18 @@ class Logging extends Plugin {
     const { log, filter, effectPool } = mCtx.model as Logging,
       { type, isPluginAction, isEffectFinish } = mCtx,
       { action, next, store } = ctx,
-      result = next(action)
+      result = next(action) //to finish effect first
+    //console.log('logging,' + action + ',' + isEffectFinish + ',' + result)
 
     if (!isPluginAction && filter(ctx, mCtx)) {
       const state = store.getState(),
         { payload, effectId } = action as Action
 
       if (effectId) {
-        const eId = isEffectFinish ? effectId.replace('_EffectFinish_', '') : effectId
-
-        if (!effectPool[eId]) {
-          effectPool[eId] = { start: Date.now(), queue: [], payload }
+        if (!effectPool[effectId]) {
+          effectPool[effectId] = { start: Date.now(), queue: [], payload }
         }
-        const { queue, start } = effectPool[eId],
+        const { queue, start } = effectPool[effectId],
           time = Date.now() - start + 'ms'
         if (isEffectFinish) {
           //take out and log when effect finishes
@@ -60,7 +59,7 @@ class Logging extends Plugin {
             const first = queue.shift()
             log(`${type} (total:${time})`, first.payload, state, queue)
             //console.log('delete=' + eId)
-            delete effectPool[eId]
+            delete effectPool[effectId]
           }
         } else {
           queue.push({ type, time, payload, state })
@@ -69,8 +68,7 @@ class Logging extends Plugin {
         log(type, payload, state)
       }
     }
-
-    return result
+    return result === undefined ? null : result
   }
 }
 

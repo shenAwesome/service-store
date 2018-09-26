@@ -17,13 +17,13 @@ class Test extends Model {
   async add2(min: number) {  //effects should all be async
     //console.log('effect started', this.points, min) //effect can read state and argument 
     this.points += 1000 //this has no effect, state is readonly for effect 
-    let rnd = await this.random() //effect can read from other effects via 'await'
+    let rnd = await this.random() //effect can read from other effects via 'await' 
     console.log('rnd=' + rnd)
     let common = this.getModel(Common)   //call reducers or effects on other model
     common.hi('Jack')
     let greet = await common.greet('Jack')
     console.log(greet)
-    this.add(rnd) //effect can call reducer to change state 
+    this.add(rnd) //effect can call reducer to change state  
   }
 
   @effect
@@ -78,7 +78,7 @@ class Common {
 const { Provider, connect, dispatch } = createStore({
   Loading: new plugins.Loading(),
   Tools: new plugins.Tools(),
-  Logging: new plugins.Logging(),
+  //Logging: new plugins.Logging(),
   test: new Test(),
   common: new Common()
 })

@@ -22,9 +22,18 @@ class Loading extends Plugin {
     this.current[actionType] = this.current[actionType] - 1
   }
 
+  clearAll() {
+    this.current = {}
+  }
+
   @middleware
   onDispatch(mwContext: any, modelContext: any) {
-    const { isEffect, isEffectFinish, type } = modelContext
+    const { isEffect, isEffectFinish, type, serviceStore } = modelContext
+    if (serviceStore.effectSessions.length == 0 && this.count() > 0) {
+      //force clear all
+      this.clearAll()
+      return
+    }
     if (isEffect) {
       if (isEffectFinish) {
         this.removeAction(type)

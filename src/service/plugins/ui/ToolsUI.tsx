@@ -27,7 +27,7 @@ class Dialog extends React.Component<any> {
       { title, message } = config
     const buttons = config.buttons || ['OK']
 
-    console.log(classNames("Dialog", className))
+    //console.log(classNames("Dialog", className))
 
     return <div className='container'>
       <div className={classNames("Dialog", className)}>
@@ -55,7 +55,7 @@ class Progress extends React.Component<any> {
       label = parseInt(percentage) + '%',
       barStyle = { width: label }
 
-    console.log(config)
+    //console.log(config)
     return <div className='container'>
       <div className="Dialog Progress">
         <div className='content'>{message}</div>

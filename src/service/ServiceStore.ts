@@ -36,9 +36,7 @@ function includes(array: any[], item: any) {
 }
 
 class EffectSession {
-  constructor(public id: string, public actionType: string) {
-
-  }
+  constructor(public id: string, public actionType: string) {}
   children: EffectSession[] = []
 }
 
@@ -55,7 +53,6 @@ class ServiceStore<T> {
   private dispatcher = {}
   private computedFields = {}
   public broker = new UIBroker()
-
 
   public effectSessions: EffectSession[] = []
 
@@ -82,9 +79,7 @@ class ServiceStore<T> {
 
     if (parentId) {
       let parent = this.findEffectSession(parentId)
-      if (parent) {
-        parent.children.push(session)
-      }
+      if (parent) parent.children.push(session)
     } else {
       this.effectSessions.push(session)
     }
@@ -135,18 +130,18 @@ class ServiceStore<T> {
           model_computedFields[methodName] = method
         } else if (method.isMiddleware) {
           // middleware. every middleware is called on every dispatch
-          modelMiddleware.push((store: any) => (next: any) => (action: any) => {
+          modelMiddleware.push((store: any) => (next: any) => (action: Action) => {
             const { effectId, type } = action,
               isEffect = includes(effectTypes, action.type),
               isEffectFinish = action.isEffectFinish,
               isPluginAction = includes(pluginIds, type.split('/')[0]),
               serviceStore = this,
               ret = method.call(
-                model_dispatch,
+                { ...store.getState()[modelId], ...model_computedFields, ...model_dispatch },
                 { store, next, action },
                 { isEffect, isEffectFinish, isPluginAction, model, type, serviceStore }
               ),
-              noResult = (ret == undefined)
+              noResult = ret === undefined
             return noResult ? next(action) : ret
           })
         } else {
@@ -162,8 +157,8 @@ class ServiceStore<T> {
               const match = action.type == actionType
               return match
                 ? produce(state, draftState => {
-                  method.call(draftState, action.payload)
-                })
+                    method.call(draftState, action.payload)
+                  })
                 : state
             }
             model_reducers.push(reducer)
@@ -197,20 +192,30 @@ class ServiceStore<T> {
       if (!includes(effectTypes, type)) return next(action)
       //already finished
       if (isEffectFinish) {
-        let session = this.findEffectSession(action.effectId)
-        //console.log('closing...', session)
+        //console.log('effectHandler closing...', action.type)
+        const { effectId } = action
+        let session = this.findEffectSession(effectId)
+        if (!session) throw `${action.type} has been cancelled`
+        //remove it if it's root
+        this.effectSessions = this.effectSessions.filter(s => s.id != effectId) //clear session
+        //console.log(this.effectSessions)
         return action.payload
       }
       //handle effect
       const { modelId, methodName, method } = effects[type]
 
-      //start an effect 
+      //start an effect
       const effectId = this.startEffectSession(type, action.effectId)
       action.effectId = effectId
-      const dispatch = this.dispatcher[modelId],
-        effectDispatch = {}
-      each(dispatch, (method, methodName) => {
-        effectDispatch[methodName] = (payload) => dispatch[methodName](payload, effectId)
+      const effectDispatch = {}
+      Object.keys(this.dispatcher[modelId]).forEach(methodName => {
+        effectDispatch[methodName] = payload => {
+          return store.dispatch({
+            type: `${modelId}/${methodName}`,
+            payload,
+            effectId
+          } as Action)
+        }
       })
 
       const state = store.getState(),
@@ -223,9 +228,12 @@ class ServiceStore<T> {
       next(action)
       //use Promise.resolve incase effect returns non promise
       return Promise.resolve(ret).then((payload: any) => {
-        return store.dispatch({ //fire finishing action
-          type, payload, effectId,
-          isEffectFinish: true,
+        return store.dispatch({
+          //fire finishing action
+          type,
+          payload,
+          effectId,
+          isEffectFinish: true
         } as Action)
       })
     }
@@ -269,17 +277,16 @@ class ServiceStore<T> {
     return this.dispatcher as any
   }
 
-
   dispatchPool: { [effectId: string]: any } = {}
   getEffectDispatch(effectId) {
     const { dispatchPool } = this
     if (!dispatchPool[effectId]) {
-      const effectDispatch = dispatchPool[effectId] = {},
+      const effectDispatch = (dispatchPool[effectId] = {}),
         { dispatcher, store } = this
       each(dispatcher, (modelDispatch, modelId) => {
-        const modelEffectDispatch = effectDispatch[modelId] = {}
+        const modelEffectDispatch = (effectDispatch[modelId] = {})
         each(modelDispatch, (method, methodName) => {
-          modelEffectDispatch[methodName] = function (payload) {
+          modelEffectDispatch[methodName] = function(payload) {
             const type = `${modelId}/${methodName}`
             store.dispatch({ type, payload, effectId })
           }
