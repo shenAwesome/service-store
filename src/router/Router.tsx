@@ -12,7 +12,7 @@ const defaultManager: RouteManager = {
         function last(str: string) {
             return str.split('/').pop()
         }
-        var reverse = (parts(oldPath) > parts(newPath))
+        const reverse = (parts(oldPath) > parts(newPath))
             || (last(oldPath) > last(newPath))
 
         return {

@@ -69,7 +69,7 @@ class Common {
 
   @effect
   async greet(name: string) {
-    await delay(.5) //delay 
+    await delay(.5) //delay  
     return "hello " + name
   }
 }

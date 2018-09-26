@@ -1,4 +1,4 @@
-import { computed, middleware, Action, Plugin } from '../core'
+import { computed, middleware, Action, Model, Plugin } from '../core'
 
 interface LoggingCfg {
   log: (type: string, payload: any, state: any, queue?: any[]) => void
@@ -7,12 +7,14 @@ interface LoggingCfg {
 class Logging extends Plugin {
   _privateFields_ = ['effectPool', 'log', 'filter']
   effectPool = {}
-  log(type: string, payload: any, state: any, queue: any[] = []) {
+  log(type: string, payload: any, state: any, queue?: any[]) {
     const modelId = type.split('/')[0]
     if (state[modelId]) state = state[modelId]
     console.groupCollapsed(type)
     console.log('payload:', payload)
-    if (queue.length) {
+    if (!queue) {
+      console.log('state:', state)
+    } else if (queue.length) {
       console.groupCollapsed('reducers:' + queue.map(q => q.type).join(','))
       queue.forEach((q: any) => {
         console.group(q.type + ' start at ' + q.time)
@@ -35,29 +37,23 @@ class Logging extends Plugin {
   }
 
   @middleware
-  onDispatch(ctx: any, mCtx: any) {
-    const { log, filter, effectPool } = mCtx.model as Logging,
-      { type, isPluginAction, isEffect, isEffectFinish } = mCtx,
+  onDispatch(ctx: middleware.Context, info: middleware.Information) {
+    const { log, filter, effectPool } = info.model as Logging,
+      { type, isPluginAction, isEffect, isEffectFinish } = info,
       { action, next, store } = ctx,
       modelId = type.split('/')[0],
-      result = next(action) //to finish effect first
-    //console.log('logging,' + action + ',' + isEffectFinish + ',' + result) 
-    //console.log(isPluginAction + ',' + type)
-    if (!isPluginAction && filter(ctx, mCtx)) {
+      result = next(action) //to finish effect first 
+    if (!isPluginAction && filter(ctx, info)) {
       const state = store.getState()[modelId],
         { payload, effectId } = action as Action
 
       if (effectId) {
-        //console.log({ isEffectFinish })
         if (!effectPool[effectId]) {
           effectPool[effectId] = { start: Date.now(), queue: [], payload }
         }
         const { queue, start } = effectPool[effectId],
           time = Date.now() - start + 'ms'
-        if (isEffectFinish) {
-          //console.log(type, queue)
-          //take out and log when effect finishes
-          //console.log('finish=' + eId)
+        if (isEffectFinish) {  //take out and log when effect finishes 
           if (type == queue[0].type) {
             const first = queue.shift()
             log(`${type} (total:${time})`, first.payload, state, queue)

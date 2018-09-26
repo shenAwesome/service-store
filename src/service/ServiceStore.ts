@@ -2,7 +2,7 @@ import produce from 'immer'
 import * as React from 'react'
 import { createStore as reduxCreateStore, combineReducers, compose, applyMiddleware, Store } from 'redux'
 import { connect as reduxConnect, Provider as reduxProvider } from 'react-redux'
-import { Action, Model, Plugin, UIBroker } from './core'
+import { Action, Model, Plugin, UIBroker, middleware } from './core'
 
 function iterate(obj: object, keys: string[], func: (val: any, key: string) => void) {
   const skipFields = (obj['_privateFields_'] || []).concat(['onModelInstalled']),
@@ -136,8 +136,8 @@ class ServiceStore<T> {
               serviceStore = this,
               ret = method.call(
                 { ...store.getState()[modelId], ...model_computedFields, ...model_dispatch },
-                { store, next, action },
-                { isEffect, isEffectFinish, isPluginAction, model, type, serviceStore }
+                { store, next, action } as middleware.Context,
+                { isEffect, isEffectFinish, isPluginAction, model, type, serviceStore } as middleware.Information
               ),
               noResult = (ret === undefined)
             return noResult ? next(action) : ret

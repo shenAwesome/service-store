@@ -7,17 +7,40 @@ interface Action {
   isEffectFinish?: boolean
 }
 
-type Tag = (cls: any, method: string) => any
 
-const createTag = (tag: string) => (target: any, key: string) => {
-  target[key]['is' + tag] = true
+//const effect = createTag('Effect') as Tag
+/** effects handles side effects/async tasks, the method needs to be async  */
+function effect(target: Object, key: string,
+  desc: TypedPropertyDescriptor<(payload?: any) => Promise<any>>) {
+  target[key]['isEffect'] = true
 }
-/** effects handles side effects/async tasks  */
-const effect = createTag('Effect') as Tag
 /** computed fields can be used in 'connect', it output values based on state  */
-const computed = createTag('Computed') as Tag
-/** tag a method a middleware, should only be used for plugins  */
-const middleware = createTag('Middleware') as Tag
+function computed(target: Object, key: string,
+  desc: TypedPropertyDescriptor<() => any>) {
+  target[key]['isComputed'] = true
+}
+
+/** tag a method a middleware, can only be used on method of a Plugin class  */
+function middleware(target: Plugin, key: string,
+  desc: TypedPropertyDescriptor<(ctx: middleware.Context, info: middleware.Information) => any>) {
+  target[key]['isMiddleware'] = true
+}
+
+module middleware {
+  export interface Context {
+    store: any
+    next: Function
+    action: Action
+  }
+  export interface Information {
+    type: string
+    isEffect: boolean
+    isEffectFinish: boolean
+    isPluginAction: boolean
+    model: any
+    serviceStore: any
+  }
+}
 
 /**
  * Model class provides helper methods like getSibling.
@@ -44,7 +67,9 @@ class Model {
  * Implement Plugin to provide common functions like logging, displaying loading bar
  * Plugin class doesn't provide any extra function than Model class, at the moment
  */
-class Plugin extends Model { }
+class Plugin extends Model {
+  _isPlugin_ = true
+}
 
 /**
  * the UI Broker handls small user interaction, like alert or prompt.
