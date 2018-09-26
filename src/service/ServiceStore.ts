@@ -73,6 +73,10 @@ class ServiceStore<T> {
     return search(this.effectSessions, id)
   }
 
+  private hasEffect(id: string) {
+    return this.findEffectSession(id) != null
+  }
+
   private startEffectSession(actionType: string, parentId?: string) {
     const effectId = Date.now() + (Math.random() + '').substring(2),
       session = new EffectSession(effectId, actionType)
@@ -188,34 +192,39 @@ class ServiceStore<T> {
      */
     const effectHandler = (store: any) => (next: any) => (action: any) => {
       const { type, isEffectFinish } = action as Action
-      //skip if not an effect
+
+      //to achieve effect cancelling, for example, a effect does ajax then calls a reducer.
+      //you can cancel it when it's running , the reducer will be blocked
+      if (action.effectId) {
+        if (!this.hasEffect(action.effectId)) {
+          throw `${action.type} has been cancelled`
+        }
+      }
+      //pass if it is a reducer
       if (!includes(effectTypes, type)) return next(action)
-      //already finished
+      //this is a 'finishing' action, effect just finished
       if (isEffectFinish) {
         //console.log('effectHandler closing...', action.type)
         const { effectId } = action
-        let session = this.findEffectSession(effectId)
-        if (!session) throw `${action.type} has been cancelled`
         //remove it if it's root
         this.effectSessions = this.effectSessions.filter(s => s.id != effectId) //clear session
         //console.log(this.effectSessions)
         return action.payload
       }
       //handle effect
-      const { modelId, methodName, method } = effects[type]
+      const { modelId, method } = effects[type]
 
       //start an effect
       const effectId = this.startEffectSession(type, action.effectId)
       action.effectId = effectId
       const effectDispatch = {}
       Object.keys(this.dispatcher[modelId]).forEach(methodName => {
-        effectDispatch[methodName] = payload => {
-          return store.dispatch({
+        effectDispatch[methodName] = payload =>
+          store.dispatch({
             type: `${modelId}/${methodName}`,
             payload,
             effectId
           } as Action)
-        }
       })
 
       const state = store.getState(),
@@ -227,15 +236,15 @@ class ServiceStore<T> {
 
       next(action)
       //use Promise.resolve incase effect returns non promise
-      return Promise.resolve(ret).then((payload: any) => {
-        return store.dispatch({
+      return Promise.resolve(ret).then((payload: any) =>
+        store.dispatch({
           //fire finishing action
           type,
           payload,
-          effectId,
+          effectId, //should be single line
           isEffectFinish: true
         } as Action)
-      })
+      )
     }
 
     let combinedReducer = combineReducers(reducers)
