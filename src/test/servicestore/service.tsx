@@ -78,7 +78,7 @@ class Common {
 const { Provider, connect, dispatch } = createStore({
   Loading: new plugins.Loading(),
   Tools: new plugins.Tools(),
-  //Logging: new plugins.Logging(),
+  Logging: new plugins.Logging(),
   test: new Test(),
   common: new Common()
 })
