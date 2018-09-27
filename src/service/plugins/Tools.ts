@@ -1,10 +1,10 @@
-import { effect, Model } from '../core'
+import { effect, Plugin } from '../core'
 import { createUI } from './ui/ToolsUI'
 
 /**
  * Tools plugin provides common functions, it needs to work together with ToolsUI component
  */
-class Tools extends Model {
+class Tools extends Plugin {
   dialogs = []
   progress = { percentage: -1, message: '' }
 
