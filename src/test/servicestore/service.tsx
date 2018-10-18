@@ -1,4 +1,4 @@
-import { createStore, plugins, effect, Model } from '../..'
+import { createStore, plugins, effect, singleEffect, Model } from '../..'
 const { Tools } = plugins
 
 
@@ -44,6 +44,14 @@ class Test extends Model {
     await $.showDialog({
       message: "you have clicked " + ((ret == 0) ? 'YES' : 'NO')
     })
+  }
+
+  @singleEffect({
+    run: 'Last',
+    debounce: 100
+  })
+  async test() {
+
   }
 
   @effect

@@ -14,6 +14,18 @@ function effect(target: Object, key: string,
   desc: TypedPropertyDescriptor<(payload?: any) => Promise<any>>) {
   target[key]['isEffect'] = true
 }
+
+function singleEffect(args: {
+  run?: 'Last' | 'First'
+  debounce?: number
+}) {
+  return function (target: Object, key: string,
+    desc: TypedPropertyDescriptor<(payload?: any) => Promise<any>>) {
+    target[key]['isEffect'] = true
+  }
+}
+
+
 /** computed fields can be used in 'connect', it output values based on state  */
 function computed(target: Object, key: string,
   desc: TypedPropertyDescriptor<() => any>) {
@@ -121,4 +133,4 @@ class UIBroker {
   }
 }
 
-export { effect, computed, middleware, Action, Model, Plugin, UIBroker }
+export { effect, singleEffect, computed, middleware, Action, Model, Plugin, UIBroker }
