@@ -27,9 +27,9 @@ class Loading extends Plugin {
   }
 
   @middleware
-  onDispatch(ctx: middleware.Context, info: middleware.Information) {
+  onDispatch(ctx: middleware.Context, info: middleware.Info) {
     const { isEffect, isEffectFinish, type, serviceStore } = info
-    if (serviceStore.effectSessions.length == 0 && this.count() > 0) {
+    if (serviceStore.effects.length == 0 && this.count() > 0) {
       //force clear all
       this.clearAll()
       return

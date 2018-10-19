@@ -17,6 +17,8 @@ class App extends React.Component {
       <br />
       <button onClick={this.testInteraction}>testInteraction</button>
       <button onClick={this.showProgress}>show progress bar</button>
+      <hr />
+      <button onClick={this.singleEffect}>single effect</button>
     </div>
   }
 
@@ -34,6 +36,10 @@ class App extends React.Component {
 
   showProgress = () => {
     dispatch.test.showProgress()
+  }
+
+  singleEffect = () => {
+    dispatch.test.singleEffect()
   }
 
   alert = () => {

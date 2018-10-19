@@ -46,12 +46,11 @@ class Test extends Model {
     })
   }
 
-  @singleEffect({
-    run: 'Last',
-    debounce: 100
-  })
-  async test() {
-
+  @singleEffect()
+  async singleEffect() {
+    const $ = this.getModel(Tools)
+    await $.sleep(1500)
+    this.add(1)
   }
 
   @effect

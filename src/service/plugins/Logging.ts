@@ -37,9 +37,9 @@ class Logging extends Plugin {
   }
 
   @middleware
-  onDispatch(ctx: middleware.Context, info: middleware.Information) {
+  onDispatch(ctx: middleware.Context, info: middleware.Info) {
     const { log, filter, effectPool } = info.model as Logging,
-      { type, isPluginAction, isEffect, isEffectFinish } = info,
+      { type, isPluginAction, isEffect, isEffectFinish, effectRootId } = info,
       { action, next, store } = ctx,
       modelId = type.split('/')[0],
       result = next(action) //to finish effect first 
@@ -48,12 +48,15 @@ class Logging extends Plugin {
         { payload, effectId } = action as Action
 
       if (effectId) {
+        const isRoot = (effectId == effectRootId)
+        //console.log(type + '=' + effectId + ',' + effectRootId)
         if (!effectPool[effectId]) {
           effectPool[effectId] = { start: Date.now(), queue: [], payload }
         }
         const { queue, start } = effectPool[effectId],
           time = Date.now() - start + 'ms'
-        if (isEffectFinish) {  //take out and log when effect finishes 
+        if (isEffectFinish && isRoot) {  //take out and log when effect finishes 
+          //console.log('-----------aaa')
           if (type == queue[0].type) {
             const first = queue.shift()
             log(`${type} (total:${time})`, first.payload, state, queue)

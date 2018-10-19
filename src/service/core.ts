@@ -15,13 +15,13 @@ function effect(target: Object, key: string,
   target[key]['isEffect'] = true
 }
 
-function singleEffect(args: {
-  run?: 'Last' | 'First'
-  debounce?: number
-}) {
+function singleEffect(runAt: 'Last' | 'First' = 'Last', debounce = 1) {
   return function (target: Object, key: string,
     desc: TypedPropertyDescriptor<(payload?: any) => Promise<any>>) {
     target[key]['isEffect'] = true
+    target[key]['singleEffect'] = {
+      runAt, debounce
+    }
   }
 }
 
@@ -34,7 +34,7 @@ function computed(target: Object, key: string,
 
 /** tag a method a middleware, can only be used on method of a Plugin class  */
 function middleware(target: Plugin, key: string,
-  desc: TypedPropertyDescriptor<(ctx: middleware.Context, info: middleware.Information) => any>) {
+  desc: TypedPropertyDescriptor<(ctx: middleware.Context, info: middleware.Info) => any>) {
   target[key]['isMiddleware'] = true
 }
 
@@ -44,11 +44,13 @@ module middleware {
     next: Function
     action: Action
   }
-  export interface Information {
+  export interface Info {
     type: string
     isEffect: boolean
     isEffectFinish: boolean
     isPluginAction: boolean
+    effectId: string
+    effectRootId: string
     model: any
     serviceStore: any
   }
